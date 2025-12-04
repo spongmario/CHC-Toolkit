@@ -149,6 +149,29 @@ header h1 {
     margin-top: 20px;
 }
 
+.provider-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.provider-name-input,
+.provider-rate-input {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s;
+}
+
+.provider-name-input:focus,
+.provider-rate-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
 .provider-item {
     display: flex;
     justify-content: space-between;
@@ -301,8 +324,13 @@ header h1 {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .provider-form {
+    .provider-row {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .provider-row .btn {
+        width: 100%;
     }
     
     .shifts-container {

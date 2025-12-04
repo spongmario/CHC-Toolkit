@@ -14,24 +14,25 @@
         </header>
 
         <div class="main-content">
-            <!-- Provider Management Section -->
+            <!-- Patient Input and Calculation -->
             <section class="card">
-                <h2>Provider Management</h2>
-                <div class="provider-form">
+                <h2>Calculate Remaining Patients</h2>
+                <div class="calculation-section">
                     <div class="form-group">
-                        <label for="providerName">Provider Name:</label>
-                        <input type="text" id="providerName" placeholder="Enter provider name">
+                        <label for="patientsInLobby">Patients Currently in Lobby:</label>
+                        <input type="number" id="patientsInLobby" min="0" value="0">
                     </div>
                     <div class="form-group">
-                        <label for="patientsPerHour">Patients per Hour:</label>
-                        <input type="number" id="patientsPerHour" step="0.1" min="0" placeholder="e.g., 2.5">
+                        <label for="currentTime">Current Time:</label>
+                        <input type="time" id="currentTime">
                     </div>
-                    <button id="addProvider" class="btn btn-primary">Add Provider</button>
-                </div>
-                
-                <div class="providers-list">
-                    <h3>Available Providers</h3>
-                    <div id="providersContainer"></div>
+                    <button id="calculateBtn" class="btn btn-calculate">Calculate Remaining Patients</button>
+                    
+                    <div id="result" class="result-box">
+                        <h3>Estimated Remaining Patients</h3>
+                        <div id="resultValue" class="result-value">-</div>
+                        <div id="resultBreakdown" class="result-breakdown"></div>
+                    </div>
                 </div>
             </section>
 
@@ -62,25 +63,12 @@
                 </div>
             </section>
 
-            <!-- Patient Input and Calculation -->
+            <!-- Provider Management Section -->
             <section class="card">
-                <h2>Calculate Remaining Patients</h2>
-                <div class="calculation-section">
-                    <div class="form-group">
-                        <label for="patientsInLobby">Patients Currently in Lobby:</label>
-                        <input type="number" id="patientsInLobby" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label for="currentTime">Current Time:</label>
-                        <input type="time" id="currentTime">
-                    </div>
-                    <button id="calculateBtn" class="btn btn-calculate">Calculate Remaining Patients</button>
-                    
-                    <div id="result" class="result-box">
-                        <h3>Estimated Remaining Patients</h3>
-                        <div id="resultValue" class="result-value">-</div>
-                        <div id="resultBreakdown" class="result-breakdown"></div>
-                    </div>
+                <h2>Provider Management</h2>
+                <div class="providers-list">
+                    <div id="providersContainer"></div>
+                    <button id="addProviderRow" class="btn btn-primary" style="margin-top: 15px;">Add Provider</button>
                 </div>
             </section>
         </div>

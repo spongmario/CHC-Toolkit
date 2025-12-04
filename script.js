@@ -29,51 +29,23 @@ function saveData() {
     localStorage.setItem('chcShiftAssignments', JSON.stringify(shiftAssignments));
 }
 
-// Add provider
-document.getElementById('addProvider').addEventListener('click', () => {
-    const name = document.getElementById('providerName').value.trim();
-    const patientsPerHour = parseFloat(document.getElementById('patientsPerHour').value);
-    
-    if (!name || isNaN(patientsPerHour) || patientsPerHour <= 0) {
-        alert('Please enter a valid provider name and patients per hour.');
-        return;
-    }
-    
-    providers.push({
+// Add provider row
+function addProviderRow() {
+    const newProvider = {
         id: Date.now(),
-        name: name,
-        patientsPerHour: patientsPerHour
-    });
-    
-    document.getElementById('providerName').value = '';
-    document.getElementById('patientsPerHour').value = '';
-    
+        name: '',
+        patientsPerHour: 0
+    };
+    providers.push(newProvider);
     saveData();
     renderProviders();
-    updateShiftAssignments();
-});
-
-// Render providers list
-function renderProviders() {
+    // Focus on the new name input
     const container = document.getElementById('providersContainer');
-    container.innerHTML = '';
-    
-    if (providers.length === 0) {
-        container.innerHTML = '<p class="empty-state">No providers added yet.</p>';
-        return;
+    const lastRow = container.lastElementChild;
+    if (lastRow) {
+        const nameInput = lastRow.querySelector('.provider-name-input');
+        if (nameInput) nameInput.focus();
     }
-    
-    providers.forEach(provider => {
-        const providerDiv = document.createElement('div');
-        providerDiv.className = 'provider-item';
-        providerDiv.innerHTML = `
-            <span class="provider-info">
-                <strong>${provider.name}</strong> - ${provider.patientsPerHour} patients/hour
-            </span>
-            <button class="btn btn-small btn-danger" onclick="deleteProvider(${provider.id})">Delete</button>
-        `;
-        container.appendChild(providerDiv);
-    });
 }
 
 // Delete provider
@@ -87,6 +59,61 @@ function deleteProvider(id) {
     saveData();
     renderProviders();
     updateShiftAssignments();
+}
+
+// Update provider name
+function updateProviderName(id, value) {
+    const provider = providers.find(p => p.id === id);
+    if (provider) {
+        provider.name = value.trim();
+        saveData();
+        updateShiftAssignments();
+    }
+}
+
+// Update provider patients per hour
+function updateProviderRate(id, value) {
+    const provider = providers.find(p => p.id === id);
+    if (provider) {
+        const rate = parseFloat(value) || 0;
+        provider.patientsPerHour = rate;
+        saveData();
+    }
+}
+
+// Render providers list
+function renderProviders() {
+    const container = document.getElementById('providersContainer');
+    container.innerHTML = '';
+    
+    if (providers.length === 0) {
+        // Add one empty row by default
+        addProviderRow();
+        return;
+    }
+    
+    providers.forEach(provider => {
+        const providerRow = document.createElement('div');
+        providerRow.className = 'provider-row';
+        providerRow.innerHTML = `
+            <input type="text" 
+                   class="provider-name-input" 
+                   placeholder="Provider name" 
+                   value="${provider.name}"
+                   onchange="updateProviderName(${provider.id}, this.value)"
+                   onblur="updateProviderName(${provider.id}, this.value)">
+            <input type="number" 
+                   class="provider-rate-input" 
+                   placeholder="# per hour" 
+                   step="0.1" 
+                   min="0"
+                   value="${provider.patientsPerHour || ''}"
+                   onchange="updateProviderRate(${provider.id}, this.value)"
+                   onblur="updateProviderRate(${provider.id}, this.value)">
+            <button class="btn btn-small btn-danger" onclick="deleteProvider(${provider.id})">Delete</button>
+        `;
+        container.appendChild(providerRow);
+    });
 }
 
 // Update shift assignments UI
@@ -285,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     
     document.getElementById('calculateBtn').addEventListener('click', calculateRemainingPatients);
+    document.getElementById('addProviderRow').addEventListener('click', addProviderRow);
     
     // Update Thursday notice when date changes
     document.getElementById('selectedDate').addEventListener('change', () => {
