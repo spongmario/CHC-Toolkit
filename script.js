@@ -25,6 +25,17 @@ function loadData() {
         shiftAssignments = JSON.parse(savedAssignments);
     }
     
+    // Initialize shift assignments for Thursday shifts if they don't exist
+    if (!shiftAssignments.thursday1) {
+        shiftAssignments.thursday1 = [];
+    }
+    if (!shiftAssignments.thursday2) {
+        shiftAssignments.thursday2 = [];
+    }
+    if (!shiftAssignments.thursday3) {
+        shiftAssignments.thursday3 = [];
+    }
+    
     renderProviders();
     updateShiftAssignments();
 }
@@ -36,7 +47,7 @@ function saveData() {
 }
 
 // Add provider row
-function addProviderRow() {
+function addProviderRow(skipRender = false) {
     const newProvider = {
         id: Date.now(),
         name: '',
@@ -45,13 +56,20 @@ function addProviderRow() {
     };
     providers.unshift(newProvider); // Add to beginning of array
     saveData();
-    renderProviders();
-    // Focus on the new name input (first row)
-    const container = document.getElementById('providersContainer');
-    const firstRow = container.firstElementChild;
-    if (firstRow) {
-        const nameInput = firstRow.querySelector('.provider-name-input');
-        if (nameInput) nameInput.focus();
+    if (!skipRender) {
+        renderProviders(true);
+        updateShiftAssignments();
+        // Focus on the new name input (first row)
+        setTimeout(() => {
+            const container = document.getElementById('providersContainer');
+            if (container) {
+                const firstRow = container.firstElementChild;
+                if (firstRow) {
+                    const nameInput = firstRow.querySelector('.provider-name-input');
+                    if (nameInput) nameInput.focus();
+                }
+            }
+        }, 10);
     }
 }
 
@@ -125,14 +143,28 @@ function editProvider(id) {
 }
 
 // Render providers list
-function renderProviders() {
+function renderProviders(skipAutoAdd = false) {
     const container = document.getElementById('providersContainer');
+    if (!container) return; // Safety check
+    
     container.innerHTML = '';
     
-    if (providers.length === 0) {
+    if (providers.length === 0 && !skipAutoAdd) {
         // Add one empty row by default
-        addProviderRow();
-        return;
+        const newProvider = {
+            id: Date.now(),
+            name: '',
+            patientsPerHour: 0,
+            submitted: false
+        };
+        providers.unshift(newProvider);
+        saveData();
+        // Now render with the new provider
+        skipAutoAdd = true;
+    }
+    
+    if (providers.length === 0) {
+        return; // Still no providers, nothing to render
     }
     
     providers.forEach(provider => {
@@ -177,58 +209,98 @@ function renderProviders() {
 
 // Update shift assignments UI
 function updateShiftAssignments() {
-    const shifts = ['opening', 'mid', 'close'];
-    const shiftIds = ['openingShift', 'midShift', 'closeShift'];
+    const shiftType = document.getElementById('shiftType').value;
+    const isThursday = shiftType === 'thursday';
+    
+    // Determine which shifts to show
+    let shifts, shiftIds, shiftLabels;
+    if (isThursday) {
+        // Thursday: show 3 shifts all 9-7
+        shifts = ['thursday1', 'thursday2', 'thursday3'];
+        shiftIds = ['thursdayShift1', 'thursdayShift2', 'thursdayShift3'];
+        shiftLabels = ['Shift 1 (9-7)', 'Shift 2 (9-7)', 'Shift 3 (9-7)'];
+    } else {
+        // Normal: show 3 different shifts
+        shifts = ['opening', 'mid', 'close'];
+        shiftIds = ['openingShift', 'midShift', 'closeShift'];
+        shiftLabels = ['Opening Shift (8-6)', 'Mid Shift (9-7)', 'Close Shift (10-8)'];
+    }
+    
+    // Update the shifts container
+    const shiftsContainer = document.getElementById('shiftsContainer');
+    shiftsContainer.innerHTML = '';
     
     shifts.forEach((shift, index) => {
+        const shiftBox = document.createElement('div');
+        shiftBox.className = 'shift-box';
+        shiftBox.innerHTML = `<h3>${shiftLabels[index]}</h3><div id="${shiftIds[index]}" class="shift-assignment"></div>`;
+        shiftsContainer.appendChild(shiftBox);
+        
         const container = document.getElementById(shiftIds[index]);
         container.innerHTML = '';
         
-        providers.forEach(provider => {
-            const isAssigned = shiftAssignments[shift].includes(provider.id);
-            const checkbox = document.createElement('div');
-            checkbox.className = 'shift-checkbox';
-            checkbox.innerHTML = `
-                <label>
-                    <input type="checkbox" 
-                           ${isAssigned ? 'checked' : ''} 
-                           onchange="toggleShiftAssignment('${shift}', ${provider.id})">
-                    ${provider.name}
-                </label>
-            `;
-            container.appendChild(checkbox);
-        });
-        
         if (providers.length === 0) {
             container.innerHTML = '<p class="empty-state">Add providers first</p>';
+        } else {
+            // Create dropdown
+            const select = document.createElement('select');
+            select.className = 'shift-provider-dropdown';
+            select.id = `dropdown-${shift}`;
+            
+            // Add empty option
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = 'Select a provider...';
+            select.appendChild(emptyOption);
+            
+            // Add providers
+            providers.forEach(provider => {
+                const option = document.createElement('option');
+                option.value = provider.id;
+                option.textContent = provider.name || 'Unnamed Provider';
+                const isAssigned = shiftAssignments[shift] && shiftAssignments[shift].includes(provider.id);
+                if (isAssigned) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            // Handle dropdown change
+            select.addEventListener('change', function() {
+                handleShiftProviderChange(shift, parseInt(this.value));
+            });
+            
+            container.appendChild(select);
         }
     });
 }
 
-// Toggle shift assignment
-function toggleShiftAssignment(shift, providerId) {
-    const index = shiftAssignments[shift].indexOf(providerId);
-    if (index > -1) {
-        shiftAssignments[shift].splice(index, 1);
-    } else {
+// Handle shift provider dropdown change
+function handleShiftProviderChange(shift, providerId) {
+    // First, remove this provider from all shifts (to prevent duplicates)
+    Object.keys(shiftAssignments).forEach(key => {
+        shiftAssignments[key] = shiftAssignments[key].filter(id => id !== providerId);
+    });
+    
+    // If a provider was selected (not empty), add to the selected shift
+    if (providerId && !isNaN(providerId)) {
+        if (!shiftAssignments[shift]) {
+            shiftAssignments[shift] = [];
+        }
         shiftAssignments[shift].push(providerId);
     }
+    
     saveData();
+    updateShiftAssignments(); // Refresh to update other dropdowns
 }
 
-// Check if selected date is Thursday
-function isThursday(date) {
-    const day = new Date(date).getDay();
-    return day === 4; // 4 = Thursday
-}
-
-// Get shift times based on day
+// Get shift times based on shift type
 function getShiftTimes(isThursday) {
     if (isThursday) {
         return {
-            opening: { start: 9, end: 19 }, // 9-7pm
-            mid: { start: 9, end: 19 },     // 9-7pm
-            close: { start: 9, end: 19 }    // 9-7pm
+            thursday1: { start: 9, end: 19 }, // 9-7pm
+            thursday2: { start: 9, end: 19 }, // 9-7pm
+            thursday3: { start: 9, end: 19 }  // 9-7pm
         };
     } else {
         return {
@@ -281,12 +353,12 @@ function calculateProviderRemainingPatients(provider, remainingHours) {
 
 // Calculate total remaining patients
 function calculateRemainingPatients() {
-    const selectedDate = document.getElementById('selectedDate').value;
+    const shiftType = document.getElementById('shiftType').value;
     const currentTime = document.getElementById('currentTime').value;
     const patientsInLobby = parseInt(document.getElementById('patientsInLobby').value) || 0;
     
-    if (!selectedDate || !currentTime) {
-        alert('Please select a date and current time.');
+    if (!currentTime) {
+        alert('Please enter current time.');
         return;
     }
     
@@ -294,24 +366,30 @@ function calculateRemainingPatients() {
     const currentHour = hours;
     const currentMinute = minutes;
     
-    const thursday = isThursday(selectedDate);
-    const shiftTimes = getShiftTimes(thursday);
-    
-    // Show/hide Thursday notice
-    document.getElementById('thursdayNotice').style.display = thursday ? 'block' : 'none';
+    const isThursday = shiftType === 'thursday';
+    const shiftTimes = getShiftTimes(isThursday);
     
     let totalRemaining = patientsInLobby;
     const breakdown = [];
     
     // Calculate for each shift
-    const shifts = [
-        { name: 'Opening', key: 'opening', shiftTimes: shiftTimes.opening },
-        { name: 'Mid', key: 'mid', shiftTimes: shiftTimes.mid },
-        { name: 'Close', key: 'close', shiftTimes: shiftTimes.close }
-    ];
+    let shifts;
+    if (isThursday) {
+        shifts = [
+            { name: 'Shift 1', key: 'thursday1', shiftTimes: shiftTimes.thursday1 },
+            { name: 'Shift 2', key: 'thursday2', shiftTimes: shiftTimes.thursday2 },
+            { name: 'Shift 3', key: 'thursday3', shiftTimes: shiftTimes.thursday3 }
+        ];
+    } else {
+        shifts = [
+            { name: 'Opening', key: 'opening', shiftTimes: shiftTimes.opening },
+            { name: 'Mid', key: 'mid', shiftTimes: shiftTimes.mid },
+            { name: 'Close', key: 'close', shiftTimes: shiftTimes.close }
+        ];
+    }
     
     shifts.forEach(shift => {
-        const assignedProviders = shiftAssignments[shift.key]
+        const assignedProviders = (shiftAssignments[shift.key] || [])
             .map(id => providers.find(p => p.id === id))
             .filter(p => p !== undefined);
         
@@ -358,10 +436,6 @@ function calculateRemainingPatients() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Set default date to today
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('selectedDate').value = today;
-    
     // Set default time to current time
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
@@ -370,14 +444,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     loadData();
     
-    document.getElementById('calculateBtn').addEventListener('click', calculateRemainingPatients);
-    document.getElementById('addProviderRow').addEventListener('click', addProviderRow);
+    const calculateBtn = document.getElementById('calculateBtn');
+    const addProviderBtn = document.getElementById('addProviderRow');
+    const shiftTypeSelect = document.getElementById('shiftType');
     
-    // Update Thursday notice when date changes
-    document.getElementById('selectedDate').addEventListener('change', () => {
-        const selectedDate = document.getElementById('selectedDate').value;
-        const thursday = isThursday(selectedDate);
-        document.getElementById('thursdayNotice').style.display = thursday ? 'block' : 'none';
-    });
+    if (calculateBtn) {
+        calculateBtn.addEventListener('click', calculateRemainingPatients);
+    }
+    
+    if (addProviderBtn) {
+        addProviderBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addProviderRow();
+        });
+    } else {
+        console.error('Add Provider button not found!');
+    }
+    
+    // Update shift assignments when shift type changes
+    if (shiftTypeSelect) {
+        shiftTypeSelect.addEventListener('change', () => {
+            updateShiftAssignments();
+        });
+    }
 });
 

@@ -39,12 +39,15 @@
             <!-- Shift Assignment Section -->
             <section class="card">
                 <h2>Shift Assignment</h2>
-                <div class="date-selector">
-                    <label for="selectedDate">Select Date:</label>
-                    <input type="date" id="selectedDate">
+                <div class="shift-type-selector">
+                    <label for="shiftType">Shift Type:</label>
+                    <select id="shiftType" class="shift-type-dropdown">
+                        <option value="normal">Normal Shifts</option>
+                        <option value="thursday">Thursday Shifts</option>
+                    </select>
                 </div>
                 
-                <div class="shifts-container">
+                <div class="shifts-container" id="shiftsContainer">
                     <div class="shift-box">
                         <h3>Opening Shift (8-6)</h3>
                         <div id="openingShift" class="shift-assignment"></div>
@@ -57,9 +60,6 @@
                         <h3>Close Shift (10-8)</h3>
                         <div id="closeShift" class="shift-assignment"></div>
                     </div>
-                </div>
-                <div id="thursdayNotice" class="thursday-notice" style="display: none;">
-                    <strong>Thursday Schedule:</strong> All shifts are 9-7pm
                 </div>
             </section>
 
