@@ -144,6 +144,15 @@ header h1 {
     background: #e53e3e;
 }
 
+.btn-secondary {
+    background: #718096;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4a5568;
+}
+
 /* Providers List */
 .providers-list {
     margin-top: 20px;
@@ -151,25 +160,38 @@ header h1 {
 
 .provider-row {
     display: grid;
-    grid-template-columns: 2fr 1fr auto;
-    gap: 15px;
+    grid-template-columns: 200px 120px auto auto;
+    gap: 12px;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .provider-name-input,
 .provider-rate-input {
-    padding: 10px;
+    padding: 8px 12px;
     border: 2px solid #ddd;
     border-radius: 6px;
-    font-size: 1em;
-    transition: border-color 0.3s;
+    font-size: 0.95em;
+    transition: border-color 0.3s, background-color 0.3s;
+    width: 100%;
 }
 
 .provider-name-input:focus,
 .provider-rate-input:focus {
     outline: none;
     border-color: #667eea;
+}
+
+.provider-row.submitted .provider-name-input,
+.provider-row.submitted .provider-rate-input {
+    background-color: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.provider-row.submitted .provider-name-input:disabled,
+.provider-row.submitted .provider-rate-input:disabled {
+    opacity: 0.7;
 }
 
 .provider-item {

@@ -13,6 +13,12 @@ function loadData() {
     
     if (savedProviders) {
         providers = JSON.parse(savedProviders);
+        // Ensure all providers have the submitted property
+        providers.forEach(provider => {
+            if (provider.submitted === undefined) {
+                provider.submitted = false;
+            }
+        });
     }
     
     if (savedAssignments) {
@@ -34,16 +40,17 @@ function addProviderRow() {
     const newProvider = {
         id: Date.now(),
         name: '',
-        patientsPerHour: 0
+        patientsPerHour: 0,
+        submitted: false
     };
-    providers.push(newProvider);
+    providers.unshift(newProvider); // Add to beginning of array
     saveData();
     renderProviders();
-    // Focus on the new name input
+    // Focus on the new name input (first row)
     const container = document.getElementById('providersContainer');
-    const lastRow = container.lastElementChild;
-    if (lastRow) {
-        const nameInput = lastRow.querySelector('.provider-name-input');
+    const firstRow = container.firstElementChild;
+    if (firstRow) {
+        const nameInput = firstRow.querySelector('.provider-name-input');
         if (nameInput) nameInput.focus();
     }
 }
@@ -64,7 +71,7 @@ function deleteProvider(id) {
 // Update provider name
 function updateProviderName(id, value) {
     const provider = providers.find(p => p.id === id);
-    if (provider) {
+    if (provider && !provider.submitted) {
         provider.name = value.trim();
         saveData();
         updateShiftAssignments();
@@ -74,10 +81,46 @@ function updateProviderName(id, value) {
 // Update provider patients per hour
 function updateProviderRate(id, value) {
     const provider = providers.find(p => p.id === id);
-    if (provider) {
+    if (provider && !provider.submitted) {
         const rate = parseFloat(value) || 0;
         provider.patientsPerHour = rate;
         saveData();
+    }
+}
+
+// Submit provider (lock it)
+function submitProvider(id) {
+    const provider = providers.find(p => p.id === id);
+    if (provider) {
+        const name = provider.name.trim();
+        const rate = provider.patientsPerHour;
+        
+        if (!name || rate <= 0) {
+            alert('Please enter a valid provider name and patients per hour before submitting.');
+            return;
+        }
+        
+        provider.submitted = true;
+        saveData();
+        renderProviders();
+    }
+}
+
+// Edit provider (unlock it)
+function editProvider(id) {
+    const provider = providers.find(p => p.id === id);
+    if (provider) {
+        provider.submitted = false;
+        saveData();
+        renderProviders();
+        // Focus on the name input after editing
+        setTimeout(() => {
+            const row = document.querySelector(`[data-provider-id="${id}"]`);
+            if (row) {
+                const nameInput = row.querySelector('.provider-name-input');
+                if (nameInput) nameInput.focus();
+            }
+        }, 50);
     }
 }
 
@@ -94,12 +137,20 @@ function renderProviders() {
     
     providers.forEach(provider => {
         const providerRow = document.createElement('div');
-        providerRow.className = 'provider-row';
+        providerRow.className = `provider-row ${provider.submitted ? 'submitted' : ''}`;
+        providerRow.setAttribute('data-provider-id', provider.id);
+        
+        const isSubmitted = provider.submitted;
+        const disabledAttr = isSubmitted ? 'disabled' : '';
+        const readonlyAttr = isSubmitted ? 'readonly' : '';
+        
         providerRow.innerHTML = `
             <input type="text" 
                    class="provider-name-input" 
                    placeholder="Provider name" 
                    value="${provider.name}"
+                   ${disabledAttr}
+                   ${readonlyAttr}
                    onchange="updateProviderName(${provider.id}, this.value)"
                    onblur="updateProviderName(${provider.id}, this.value)">
             <input type="number" 
@@ -108,10 +159,18 @@ function renderProviders() {
                    step="0.1" 
                    min="0"
                    value="${provider.patientsPerHour || ''}"
+                   ${disabledAttr}
+                   ${readonlyAttr}
                    onchange="updateProviderRate(${provider.id}, this.value)"
                    onblur="updateProviderRate(${provider.id}, this.value)">
+            ${isSubmitted 
+                ? `<button class="btn btn-small btn-secondary" onclick="editProvider(${provider.id})">Edit</button>`
+                : `<button class="btn btn-small btn-primary" onclick="submitProvider(${provider.id})">Submit</button>`
+            }
             <button class="btn btn-small btn-danger" onclick="deleteProvider(${provider.id})">Delete</button>
         `;
+        // Append in order - since we use unshift(), newest providers are at index 0
+        // and will be appended first, appearing at the top
         container.appendChild(providerRow);
     });
 }
