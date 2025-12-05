@@ -441,8 +441,8 @@ function calculateRemainingPatients() {
     const currentTime = document.getElementById('currentTime').value;
     const patientsInLobby = parseInt(document.getElementById('patientsInLobby').value) || 0;
     
+    // If no time is set yet, don't calculate (will update automatically once time is set)
     if (!currentTime) {
-        alert('Please enter current time.');
         return;
     }
     
@@ -674,15 +674,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     loadData();
     
-    const calculateBtn = document.getElementById('calculateBtn');
     const addProviderBtn = document.getElementById('addProviderRow');
     const shiftTypeSelect = document.getElementById('shiftType');
     
-    if (calculateBtn) {
-        calculateBtn.addEventListener('click', calculateRemainingPatients);
+    // Auto-update when patients in lobby changes
+    const patientsInLobbyInput = document.getElementById('patientsInLobby');
+    if (patientsInLobbyInput) {
+        patientsInLobbyInput.addEventListener('input', calculateRemainingPatients);
+        patientsInLobbyInput.addEventListener('change', calculateRemainingPatients);
     }
     
-    // Auto-check when time changes
+    // Auto-update when time changes
     const currentTimeInput = document.getElementById('currentTime');
     if (currentTimeInput) {
         currentTimeInput.addEventListener('change', calculateRemainingPatients);
