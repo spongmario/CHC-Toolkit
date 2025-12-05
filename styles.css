@@ -153,6 +153,27 @@ header h1 {
     background: #4a5568;
 }
 
+/* Provider Management Collapsible */
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+details summary {
+    list-style: none;
+}
+
+details summary::before {
+    content: '▶ ';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s;
+    color: #667eea;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg);
+}
+
 /* Providers List */
 .providers-list {
     margin-top: 20px;
