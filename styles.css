@@ -44,6 +44,12 @@ header h1 {
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
 }
 
 .card h2 {
@@ -91,6 +97,51 @@ header h1 {
 .form-group input:focus {
     outline: none;
     border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.time-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.time-input-group input {
+    flex: 1;
+}
+
+.tooltip-icon {
+    font-size: 0.8em;
+    cursor: help;
+    opacity: 0.7;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.tooltip-icon:hover {
+    opacity: 1;
+}
+
+.shift-type-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.shift-type-controls select {
+    flex: 1;
+    max-width: 300px;
+}
+
+.providers-header {
+    margin-bottom: 15px;
+}
+
+.help-text {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
 }
 
 /* Buttons */
@@ -185,6 +236,13 @@ details[open] summary::before {
     gap: 12px;
     align-items: center;
     margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.provider-row:hover {
+    background-color: #f9f9f9;
 }
 
 .provider-name-input,
@@ -322,6 +380,24 @@ details[open] summary::before {
     border: 1px solid #b3d9ff;
     border-radius: 6px;
     margin-bottom: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.assigned-provider-item:hover {
+    transform: translateX(3px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .assigned-provider-name {
@@ -363,6 +439,19 @@ details[open] summary::before {
     border-radius: 8px;
     color: white;
     text-align: center;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .result-box h3 {
@@ -377,6 +466,11 @@ details[open] summary::before {
     font-weight: bold;
     margin: 20px 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.result-value:hover {
+    transform: scale(1.05);
 }
 
 .rickey-message {
@@ -459,5 +553,44 @@ details[open] summary::before {
     .result-value {
         font-size: 3em;
     }
+    
+    .time-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .time-input-group .btn {
+        width: 100%;
+    }
+    
+    .shift-type-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .shift-type-controls select {
+        max-width: 100%;
+    }
+    
+    .shift-type-controls .btn {
+        width: 100%;
+    }
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Smooth scroll */
+html {
+    scroll-behavior: smooth;
 }
 

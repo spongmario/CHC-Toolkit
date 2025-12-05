@@ -19,12 +19,18 @@
                 <h2>Calculate Remaining Patients</h2>
                 <div class="calculation-section">
                     <div class="form-group">
-                        <label for="patientsInLobby">Patients Currently in Lobby:</label>
+                        <label for="patientsInLobby">
+                            Patients Currently in Lobby:
+                            <span class="tooltip-icon" title="Enter the number of patients currently waiting in the lobby">ℹ️</span>
+                        </label>
                         <input type="number" id="patientsInLobby" min="0" value="0">
                     </div>
                     <div class="form-group">
                         <label for="currentTime">Current Time:</label>
-                        <input type="time" id="currentTime">
+                        <div class="time-input-group">
+                            <input type="time" id="currentTime">
+                            <button type="button" id="setCurrentTimeBtn" class="btn btn-secondary btn-small" title="Set to current time">Now</button>
+                        </div>
                     </div>
                     
                     <div id="result" class="result-box">
@@ -41,10 +47,13 @@
                 <h2>Shift Assignment</h2>
                 <div class="shift-type-selector">
                     <label for="shiftType">Shift Type:</label>
-                    <select id="shiftType" class="shift-type-dropdown">
-                        <option value="normal">Normal Shifts</option>
-                        <option value="thursday">Thursday Shifts</option>
-                    </select>
+                    <div class="shift-type-controls">
+                        <select id="shiftType" class="shift-type-dropdown">
+                            <option value="normal">Normal Shifts</option>
+                            <option value="thursday">Thursday Shifts</option>
+                        </select>
+                        <button type="button" id="clearAllShiftsBtn" class="btn btn-secondary btn-small" title="Clear all shift assignments">Clear All</button>
+                    </div>
                 </div>
                 
                 <div class="shifts-container" id="shiftsContainer">
@@ -70,7 +79,10 @@
                         <span style="user-select: none;">Provider Management</span>
                     </summary>
                     <div class="providers-list" style="margin-top: 20px;">
-                        <button id="addProviderRow" class="btn btn-primary" style="margin-bottom: 15px;">Add Provider</button>
+                        <div class="providers-header">
+                            <button id="addProviderRow" class="btn btn-primary" style="margin-bottom: 15px;">+ Add Provider</button>
+                            <p class="help-text">Base providers are pre-loaded. Add temporary providers as needed.</p>
+                        </div>
                         <div id="providersContainer"></div>
                     </div>
                 </details>

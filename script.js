@@ -121,15 +121,41 @@ function addProviderRow(skipRender = false) {
 
 // Delete provider
 function deleteProvider(id) {
+    const provider = providers.find(p => p.id === id);
+    const providerName = provider ? provider.name || 'this provider' : 'this provider';
+    
+    // Don't confirm for base providers, just show a message
+    if (provider && provider.isBase) {
+        if (!confirm(`Are you sure you want to remove ${providerName} from the list? This will also remove them from all shift assignments.`)) {
+            return;
+        }
+    } else {
+        if (!confirm(`Are you sure you want to delete ${providerName}? This will also remove them from all shift assignments.`)) {
+            return;
+        }
+    }
+    
     providers = providers.filter(p => p.id !== id);
     // Remove from shift assignments
     shiftAssignments.opening = shiftAssignments.opening.filter(pid => pid !== id);
     shiftAssignments.mid = shiftAssignments.mid.filter(pid => pid !== id);
     shiftAssignments.close = shiftAssignments.close.filter(pid => pid !== id);
     
+    // Also remove from Thursday shifts
+    if (shiftAssignments.thursday1) {
+        shiftAssignments.thursday1 = shiftAssignments.thursday1.filter(pid => pid !== id);
+    }
+    if (shiftAssignments.thursday2) {
+        shiftAssignments.thursday2 = shiftAssignments.thursday2.filter(pid => pid !== id);
+    }
+    if (shiftAssignments.thursday3) {
+        shiftAssignments.thursday3 = shiftAssignments.thursday3.filter(pid => pid !== id);
+    }
+    
     saveData();
     renderProviders();
     updateShiftAssignments();
+    calculateRemainingPatients();
 }
 
 // Update provider name
@@ -366,6 +392,39 @@ function removeProviderFromShift(shift, providerId) {
         updateShiftAssignments();
         // Automatically recalculate remaining patients
         calculateRemainingPatients();
+    }
+}
+
+// Clear all shift assignments
+function clearAllShifts() {
+    if (!confirm('Are you sure you want to clear all shift assignments? This action cannot be undone.')) {
+        return;
+    }
+    
+    shiftAssignments.opening = [];
+    shiftAssignments.mid = [];
+    shiftAssignments.close = [];
+    shiftAssignments.thursday1 = [];
+    shiftAssignments.thursday2 = [];
+    shiftAssignments.thursday3 = [];
+    
+    saveData();
+    updateShiftAssignments();
+    calculateRemainingPatients();
+}
+
+// Set current time to now
+function setCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeInput = document.getElementById('currentTime');
+    if (timeInput) {
+        timeInput.value = `${hours}:${minutes}`;
+        calculateRemainingPatients();
+        // Visual feedback
+        timeInput.focus();
+        setTimeout(() => timeInput.blur(), 300);
     }
 }
 
@@ -676,6 +735,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const addProviderBtn = document.getElementById('addProviderRow');
     const shiftTypeSelect = document.getElementById('shiftType');
+    const setCurrentTimeBtn = document.getElementById('setCurrentTimeBtn');
+    const clearAllShiftsBtn = document.getElementById('clearAllShiftsBtn');
+    
+    // Set current time button
+    if (setCurrentTimeBtn) {
+        setCurrentTimeBtn.addEventListener('click', setCurrentTime);
+    }
+    
+    // Clear all shifts button
+    if (clearAllShiftsBtn) {
+        clearAllShiftsBtn.addEventListener('click', clearAllShifts);
+    }
     
     // Auto-update when patients in lobby changes
     const patientsInLobbyInput = document.getElementById('patientsInLobby');
@@ -718,7 +789,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (shiftTypeSelect) {
         shiftTypeSelect.addEventListener('change', () => {
             updateShiftAssignments();
+            calculateRemainingPatients();
         });
     }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + N: Add new provider
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            if (addProviderBtn) {
+                addProviderRow();
+            }
+        }
+        
+        // Ctrl/Cmd + T: Set current time
+        if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+            e.preventDefault();
+            setCurrentTime();
+        }
+    });
+    
+    // Add visual feedback for number inputs
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    numberInputs.forEach(input => {
+        input.addEventListener('invalid', function() {
+            this.setCustomValidity('Please enter a valid number');
+        });
+        input.addEventListener('input', function() {
+            this.setCustomValidity('');
+        });
+    });
 });
 
