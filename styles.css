@@ -329,6 +329,10 @@ header h1 {
     background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
 }
 
+.result-box.no-providers {
+    background: linear-gradient(135deg, #d4a574 0%, #b8865a 100%);
+}
+
 .result-breakdown {
     margin-top: 20px;
     text-align: left;

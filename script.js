@@ -481,10 +481,16 @@ function calculateRemainingPatients() {
         ];
     }
     
+    // Check if any providers are assigned to any shift
+    let hasAnyProviders = false;
     shifts.forEach(shift => {
         const assignedProviders = (shiftAssignments[shift.key] || [])
             .map(id => providers.find(p => p.id === id))
             .filter(p => p !== undefined);
+        
+        if (assignedProviders.length > 0) {
+            hasAnyProviders = true;
+        }
         
         assignedProviders.forEach(provider => {
             const remainingHours = calculateRemainingHours(
@@ -509,9 +515,30 @@ function calculateRemainingPatients() {
     });
     
     // Display results
-    document.getElementById('resultValue').textContent = Math.round(totalRemaining);
-    
+    const resultValue = document.getElementById('resultValue');
     const breakdownDiv = document.getElementById('resultBreakdown');
+    
+    // Check if no providers are selected
+    if (!hasAnyProviders) {
+        resultValue.textContent = patientsInLobby;
+        resultBox.classList.add('no-providers');
+        breakdownDiv.innerHTML = `
+            <div class="breakdown-header" style="color: #fff8dc; font-weight: bold;">⚠️ No Providers Selected</div>
+            <div class="breakdown-item" style="margin-top: 10px;">
+                Begin by assigning a provider below to calculate remaining patient capacity.
+            </div>
+            <div class="breakdown-item" style="margin-top: 10px;">
+                <strong>Lobby only:</strong> ${patientsInLobby} patients
+            </div>
+        `;
+        return;
+    }
+    
+    // Remove no-providers class if providers are selected
+    resultBox.classList.remove('no-providers');
+    
+    resultValue.textContent = Math.round(totalRemaining);
+    
     if (breakdown.length > 0) {
         breakdownDiv.innerHTML = `
             <div class="breakdown-header">Breakdown:</div>
@@ -523,7 +550,11 @@ function calculateRemainingPatients() {
             `).join('')}
         `;
     } else {
-        breakdownDiv.innerHTML = '<div class="breakdown-item">No providers assigned or all shifts completed.</div>';
+        breakdownDiv.innerHTML = `
+            <div class="breakdown-header">Breakdown:</div>
+            <div class="breakdown-item">Lobby: ${patientsInLobby} patients</div>
+            <div class="breakdown-item" style="margin-top: 10px; color: #ffeb3b;">All assigned providers have completed their shifts.</div>
+        `;
     }
 }
 
