@@ -3,91 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHC Patient Calculator</title>
+    <title>CHC Toolkit</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>CHC Patient Calculator</h1>
-            <p class="subtitle">Estimate remaining patient capacity for the day</p>
-        </header>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>CHC Toolkit</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="home">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Home</span>
+                </button>
+                <button class="nav-item" data-page="calculator">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Patient Calculator</span>
+                </button>
+                <button class="nav-item" data-page="pathways">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Clinical Pathways</span>
+                </button>
+            </nav>
+        </aside>
 
-        <div class="main-content">
-            <!-- Patient Input and Calculation -->
-            <section class="card">
-                <h2>Calculate Remaining Patients</h2>
-                <div class="calculation-section">
-                    <div class="form-group">
-                        <label for="patientsInLobby">Patients Currently in Lobby:</label>
-                        <input type="number" id="patientsInLobby" min="0" value="0">
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Home/Intro Page -->
+            <div id="home-page" class="page active">
+                <div class="page-header">
+                    <h2>Welcome to CHC Toolkit</h2>
+                    <p class="page-subtitle">Your comprehensive resource for urgent care operations</p>
+                </div>
+                <div class="intro-content">
+                    <div class="intro-card">
+                        <div class="intro-icon">📊</div>
+                        <h3>Patient Calculator</h3>
+                        <p>Estimate remaining patient capacity for the day based on current providers, shift assignments, and lobby status.</p>
+                        <button class="btn btn-primary" onclick="navigateToPage('calculator')">Go to Calculator</button>
                     </div>
-                    <div class="form-group">
-                        <label for="currentTime">Current Time:</label>
-                        <div class="time-input-group">
-                            <input type="time" id="currentTime">
-                            <button type="button" id="setCurrentTimeBtn" class="btn btn-secondary btn-small" title="Set to current time">Now</button>
+                    <div class="intro-card">
+                        <div class="intro-icon">📋</div>
+                        <h3>Clinical Pathways</h3>
+                        <p>Access clinical practice guidelines and pathways to help guide decision-making in various patient care situations.</p>
+                        <button class="btn btn-primary" onclick="navigateToPage('pathways')">View Pathways</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Calculator Page -->
+            <div id="calculator-page" class="page">
+                <div class="page-header">
+                    <h2>Patient Calculator</h2>
+                    <p class="page-subtitle">Estimate remaining patient capacity for the day</p>
+                </div>
+                <div class="calculator-content">
+                    <!-- Patient Input and Calculation -->
+                    <section class="card">
+                        <h2>Calculate Remaining Patients</h2>
+                        <div class="calculation-section">
+                            <div class="form-group">
+                                <label for="patientsInLobby">Patients Currently in Lobby:</label>
+                                <input type="number" id="patientsInLobby" min="0" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="currentTime">Current Time:</label>
+                                <div class="time-input-group">
+                                    <input type="time" id="currentTime">
+                                    <button type="button" id="setCurrentTimeBtn" class="btn btn-secondary btn-small" title="Set to current time">Now</button>
+                                </div>
+                            </div>
+                            
+                            <div id="result" class="result-box">
+                                <h3>Estimated Remaining Patients</h3>
+                                <div id="resultValue" class="result-value">-</div>
+                                <div id="rickeyMessage" class="rickey-message" style="display: none;"></div>
+                                <div id="resultBreakdown" class="result-breakdown"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Shift Assignment Section -->
+                    <section class="card">
+                        <h2>Shift Assignment</h2>
+                        <div class="shift-type-selector">
+                            <label for="shiftType">Shift Type:</label>
+                            <div class="shift-type-controls">
+                                <select id="shiftType" class="shift-type-dropdown">
+                                    <option value="normal">Normal Shifts</option>
+                                    <option value="thursday">Thursday Shifts</option>
+                                </select>
+                                <button type="button" id="clearAllShiftsBtn" class="btn btn-secondary btn-small" title="Clear all shift assignments">Clear All</button>
+                            </div>
+                        </div>
+                        
+                        <div class="shifts-container" id="shiftsContainer">
+                            <div class="shift-box">
+                                <h3>Opening Shift (8-6)</h3>
+                                <div id="openingShift" class="shift-assignment"></div>
+                            </div>
+                            <div class="shift-box">
+                                <h3>Mid Shift (9-7)</h3>
+                                <div id="midShift" class="shift-assignment"></div>
+                            </div>
+                            <div class="shift-box">
+                                <h3>Close Shift (10-8)</h3>
+                                <div id="closeShift" class="shift-assignment"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Provider Management Section -->
+                    <section class="card">
+                        <details>
+                            <summary style="cursor: pointer; color: #667eea; font-size: 1.5em; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea; list-style: none; text-align: center;">
+                                <span style="user-select: none;">Provider Management</span>
+                            </summary>
+                            <div class="providers-list" style="margin-top: 20px;">
+                                <div class="providers-header">
+                                    <button id="addProviderRow" class="btn btn-primary" style="margin-bottom: 15px;">+ Add Provider</button>
+                                    <p class="help-text">Base providers are pre-loaded. Add temporary providers as needed.</p>
+                                </div>
+                                <div id="providersContainer"></div>
+                            </div>
+                        </details>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Clinical Pathways Page -->
+            <div id="pathways-page" class="page">
+                <div class="page-header">
+                    <h2>Clinical Pathways</h2>
+                    <p class="page-subtitle">Clinical practice guidelines and pathways for patient care</p>
+                </div>
+                <div class="pathways-content">
+                    <div class="pathways-controls">
+                        <div class="auth-controls">
+                            <button id="adminLoginBtn" class="btn btn-secondary" style="display: none;">
+                                🔐 Admin Login
+                            </button>
+                            <button id="adminLogoutBtn" class="btn btn-secondary" style="display: none;">
+                                🚪 Logout
+                            </button>
+                        </div>
+                        <input type="file" id="pathwayFileInput" accept=".pdf,.doc,.docx,.txt" multiple style="display: none;">
+                        <button id="uploadPathwayBtn" class="btn btn-primary" style="display: none;" onclick="handleUploadClick()">
+                            📁 Upload Pathway Document
+                        </button>
+                        <div class="search-box">
+                            <input type="text" id="pathwaySearch" placeholder="Search pathways..." class="search-input">
                         </div>
                     </div>
-                    
-                    <div id="result" class="result-box">
-                        <h3>Estimated Remaining Patients</h3>
-                        <div id="resultValue" class="result-value">-</div>
-                        <div id="rickeyMessage" class="rickey-message" style="display: none;"></div>
-                        <div id="resultBreakdown" class="result-breakdown"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Shift Assignment Section -->
-            <section class="card">
-                <h2>Shift Assignment</h2>
-                <div class="shift-type-selector">
-                    <label for="shiftType">Shift Type:</label>
-                    <div class="shift-type-controls">
-                        <select id="shiftType" class="shift-type-dropdown">
-                            <option value="normal">Normal Shifts</option>
-                            <option value="thursday">Thursday Shifts</option>
-                        </select>
-                        <button type="button" id="clearAllShiftsBtn" class="btn btn-secondary btn-small" title="Clear all shift assignments">Clear All</button>
-                    </div>
-                </div>
-                
-                <div class="shifts-container" id="shiftsContainer">
-                    <div class="shift-box">
-                        <h3>Opening Shift (8-6)</h3>
-                        <div id="openingShift" class="shift-assignment"></div>
-                    </div>
-                    <div class="shift-box">
-                        <h3>Mid Shift (9-7)</h3>
-                        <div id="midShift" class="shift-assignment"></div>
-                    </div>
-                    <div class="shift-box">
-                        <h3>Close Shift (10-8)</h3>
-                        <div id="closeShift" class="shift-assignment"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Provider Management Section -->
-            <section class="card">
-                <details>
-                    <summary style="cursor: pointer; color: #667eea; font-size: 1.5em; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea; list-style: none; text-align: center;">
-                        <span style="user-select: none;">Provider Management</span>
-                    </summary>
-                    <div class="providers-list" style="margin-top: 20px;">
-                        <div class="providers-header">
-                            <button id="addProviderRow" class="btn btn-primary" style="margin-bottom: 15px;">+ Add Provider</button>
-                            <p class="help-text">Base providers are pre-loaded. Add temporary providers as needed.</p>
+                    <div id="pathwaysList" class="pathways-list">
+                        <div class="empty-pathways">
+                            <div class="empty-icon">📋</div>
+                            <h3>No Clinical Pathways Yet</h3>
+                            <p>Clinical pathways are managed by administrators. Contact your administrator to add documents.</p>
                         </div>
-                        <div id="providersContainer"></div>
                     </div>
-                </details>
-            </section>
-        </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-

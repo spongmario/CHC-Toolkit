@@ -820,5 +820,595 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setCustomValidity('');
         });
     });
+    
+    // Initialize navigation
+    initializeNavigation();
+    
+    // Initialize Clinical Pathways
+    initializePathways();
 });
+
+// ==================== Navigation System ====================
+
+function navigateToPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Show selected page
+    const targetPage = document.getElementById(`${pageId}-page`);
+    if (targetPage) {
+        targetPage.classList.add('active');
+    }
+    
+    // Update nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-page') === pageId) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Check authentication when navigating to pathways page
+    if (pageId === 'pathways') {
+        checkAuthentication();
+    }
+}
+
+function initializeNavigation() {
+    // Add click handlers to nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const pageId = this.getAttribute('data-page');
+            navigateToPage(pageId);
+        });
+    });
+}
+
+// Make navigateToPage available globally for buttons
+window.navigateToPage = navigateToPage;
+
+// ==================== Clinical Pathways System ====================
+
+// Admin password - Change this to your desired password
+const ADMIN_PASSWORD = 'CHC2024'; // Change this password!
+
+let pathways = [];
+let isAuthenticated = false;
+let db = null;
+
+// IndexedDB setup
+const DB_NAME = 'CHCToolkitDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'pathways';
+
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => {
+            console.error('IndexedDB error:', request.error);
+            reject(request.error);
+        };
+        
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('IndexedDB opened successfully');
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                objectStore.createIndex('name', 'name', { unique: false });
+                objectStore.createIndex('uploadDate', 'uploadDate', { unique: false });
+                console.log('IndexedDB object store created');
+            }
+        };
+    });
+}
+
+async function loadPathways() {
+    try {
+        if (!db) {
+            await initDB();
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+            
+            request.onsuccess = async () => {
+                pathways = request.result || [];
+                
+                // Migrate from localStorage if IndexedDB is empty but localStorage has data
+                if (pathways.length === 0) {
+                    const oldData = localStorage.getItem('chcPathways');
+                    if (oldData) {
+                        try {
+                            const oldPathways = JSON.parse(oldData);
+                            console.log('Migrating', oldPathways.length, 'pathways from localStorage to IndexedDB');
+                            
+                            // Convert base64 data URLs to ArrayBuffers and save to IndexedDB
+                            for (const oldPathway of oldPathways) {
+                                if (oldPathway.data && typeof oldPathway.data === 'string' && oldPathway.data.startsWith('data:')) {
+                                    // Convert base64 data URL to ArrayBuffer
+                                    const base64Data = oldPathway.data.split(',')[1];
+                                    const binaryString = atob(base64Data);
+                                    const bytes = new Uint8Array(binaryString.length);
+                                    for (let i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    oldPathway.data = bytes.buffer;
+                                }
+                                await savePathway(oldPathway);
+                                pathways.push(oldPathway);
+                            }
+                            
+                            // Clear old localStorage data
+                            localStorage.removeItem('chcPathways');
+                            console.log('Migration complete');
+                        } catch (migError) {
+                            console.error('Migration error:', migError);
+                        }
+                    }
+                }
+                
+                console.log('Loaded', pathways.length, 'pathways from IndexedDB');
+                renderPathways();
+                resolve(pathways);
+            };
+            
+            request.onerror = () => {
+                console.error('Error loading pathways:', request.error);
+                reject(request.error);
+            };
+        });
+    } catch (error) {
+        console.error('Error initializing DB:', error);
+        pathways = [];
+        renderPathways();
+    }
+}
+
+async function savePathway(pathway) {
+    try {
+        if (!db) {
+            await initDB();
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(pathway);
+            
+            request.onsuccess = () => {
+                console.log('Pathway saved to IndexedDB:', pathway.name);
+                resolve();
+            };
+            
+            request.onerror = () => {
+                console.error('Error saving pathway:', request.error);
+                reject(request.error);
+            };
+        });
+    } catch (error) {
+        console.error('Error saving pathway:', error);
+        throw error;
+    }
+}
+
+async function deletePathwayFromDB(id) {
+    try {
+        if (!db) {
+            await initDB();
+        }
+        
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(id);
+            
+            request.onsuccess = () => {
+                console.log('Pathway deleted from IndexedDB');
+                resolve();
+            };
+            
+            request.onerror = () => {
+                console.error('Error deleting pathway:', request.error);
+                reject(request.error);
+            };
+        });
+    } catch (error) {
+        console.error('Error deleting pathway:', error);
+        throw error;
+    }
+}
+
+function renderPathways(filter = '') {
+    const container = document.getElementById('pathwaysList');
+    if (!container) return;
+    
+    let filteredPathways = [...pathways]; // Create a copy to avoid mutating original
+    
+    // Apply filter if provided
+    if (filter) {
+        const searchLower = filter.toLowerCase();
+        filteredPathways = filteredPathways.filter(p => 
+            p.name.toLowerCase().includes(searchLower) ||
+            (p.description && p.description.toLowerCase().includes(searchLower))
+        );
+    }
+    
+    // Sort alphabetically by name
+    filteredPathways.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+    
+    if (filteredPathways.length === 0 && pathways.length === 0) {
+        container.innerHTML = `
+            <div class="empty-pathways">
+                <div class="empty-icon">📋</div>
+                <h3>No Clinical Pathways Yet</h3>
+                <p>Upload your first clinical pathway document to get started.</p>
+                <button class="btn btn-primary" onclick="document.getElementById('pathwayFileInput').click()">
+                    Upload First Pathway
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    if (filteredPathways.length === 0) {
+        container.innerHTML = `
+            <div class="empty-pathways">
+                <div class="empty-icon">🔍</div>
+                <h3>No Pathways Found</h3>
+                <p>No pathways match your search criteria.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create list HTML
+    container.innerHTML = `
+        <div class="pathway-list-container">
+            ${filteredPathways.map((pathway) => {
+                const fileIcon = getFileIcon(pathway.fileType);
+                const uploadDate = new Date(pathway.uploadDate).toLocaleDateString();
+                // Find the actual index in the original pathways array
+                const actualIndex = pathways.findIndex(p => p.id === pathway.id);
+                return `
+                    <div class="pathway-list-item" onclick="viewPathway(${actualIndex})">
+                        <div class="pathway-list-icon">${fileIcon}</div>
+                        <div class="pathway-list-info">
+                            <div class="pathway-list-name">${escapeHtml(pathway.name)}</div>
+                            <div class="pathway-list-meta">${formatFileSize(pathway.size)} • Uploaded ${uploadDate}</div>
+                        </div>
+                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                            <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
+                            ${isAuthenticated ? `<button class="btn btn-danger btn-small" onclick="deletePathway(${actualIndex})">Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function getFileIcon(fileType) {
+    if (fileType === 'pdf') return '📄';
+    if (fileType === 'doc' || fileType === 'docx') return '📝';
+    if (fileType === 'txt') return '📃';
+    return '📎';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function handleFileUpload(files) {
+    if (!files || files.length === 0) {
+        console.error('No files selected');
+        return;
+    }
+    
+    // Initialize DB if needed
+    if (!db) {
+        try {
+            await initDB();
+        } catch (error) {
+            alert('Error initializing database: ' + error.message);
+            return;
+        }
+    }
+    
+    const fileArray = Array.from(files);
+    let processedCount = 0;
+    let errorCount = 0;
+    
+    // Process files sequentially to avoid overwhelming the browser
+    for (let index = 0; index < fileArray.length; index++) {
+        const file = fileArray[index];
+        
+        // Check file size (limit to 100MB for IndexedDB)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        
+        if (file.size > maxSize) {
+            alert(`File "${file.name}" is too large (${formatFileSize(file.size)}). Maximum size is 100MB.`);
+            errorCount++;
+            continue;
+        }
+        
+        try {
+            // Read file as ArrayBuffer for IndexedDB (more efficient than base64)
+            const arrayBuffer = await file.arrayBuffer();
+            
+            const pathway = {
+                id: Date.now() + Math.random() + index,
+                name: file.name,
+                fileType: getFileExtension(file.name),
+                size: file.size,
+                uploadDate: new Date().toISOString(),
+                data: arrayBuffer, // Store as ArrayBuffer
+                mimeType: file.type
+            };
+            
+            // Save to IndexedDB
+            await savePathway(pathway);
+            pathways.push(pathway);
+            processedCount++;
+            
+            console.log(`Uploaded ${processedCount}/${fileArray.length}: ${file.name}`);
+        } catch (error) {
+            console.error('Error processing file:', error);
+            alert(`Error uploading file "${file.name}": ${error.message}`);
+            errorCount++;
+        }
+    }
+    
+    // Render and show success message
+    renderPathways();
+    if (processedCount > 0) {
+        alert(`Successfully uploaded ${processedCount} file(s)!`);
+    }
+    if (errorCount > 0) {
+        alert(`Failed to upload ${errorCount} file(s).`);
+    }
+}
+
+function getFileExtension(filename) {
+    return filename.split('.').pop().toLowerCase();
+}
+
+function viewPathway(index) {
+    const pathway = pathways[index];
+    if (!pathway) return;
+    
+    // Convert ArrayBuffer to blob URL for viewing
+    const blob = new Blob([pathway.data], { type: pathway.mimeType || 'application/octet-stream' });
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Create a new window/tab to view the document
+    const newWindow = window.open();
+    if (pathway.mimeType === 'application/pdf' || pathway.fileType === 'pdf') {
+        // For PDFs, embed directly
+        newWindow.document.write(`
+            <html>
+                <head><title>${escapeHtml(pathway.name)}</title></head>
+                <body style="margin:0;padding:0;">
+                    <embed src="${blobUrl}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
+                </body>
+            </html>
+        `);
+    } else {
+        // For other files, try to display or download
+        newWindow.document.write(`
+            <html>
+                <head><title>${escapeHtml(pathway.name)}</title></head>
+                <body style="margin:20px;font-family:Arial;">
+                    <h2>${escapeHtml(pathway.name)}</h2>
+                    <p>This file type cannot be displayed in the browser. Please download it to view.</p>
+                    <button onclick="window.location.href='${blobUrl}'" download="${escapeHtml(pathway.name)}" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">
+                        Download File
+                    </button>
+                </body>
+            </html>
+        `);
+    }
+    
+    // Clean up blob URL when window closes
+    newWindow.addEventListener('beforeunload', () => {
+        URL.revokeObjectURL(blobUrl);
+    });
+}
+
+function downloadPathway(index) {
+    const pathway = pathways[index];
+    if (!pathway) return;
+    
+    // Convert ArrayBuffer to blob for download
+    const blob = new Blob([pathway.data], { type: pathway.mimeType || 'application/octet-stream' });
+    const blobUrl = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = pathway.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up blob URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+}
+
+async function deletePathway(index) {
+    if (!isAuthenticated) {
+        alert('You must be authenticated to delete documents.');
+        handleAdminLogin();
+        return;
+    }
+    
+    const pathway = pathways[index];
+    if (!pathway) return;
+    
+    if (!confirm(`Are you sure you want to delete "${pathway.name}"?`)) {
+        return;
+    }
+    
+    try {
+        // Delete from IndexedDB
+        await deletePathwayFromDB(pathway.id);
+        
+        // Remove from array
+        pathways.splice(index, 1);
+        renderPathways();
+    } catch (error) {
+        alert('Error deleting document: ' + error.message);
+        console.error('Delete error:', error);
+    }
+}
+
+function checkAuthentication() {
+    // Check sessionStorage for authentication status
+    const authStatus = sessionStorage.getItem('chcAdminAuthenticated');
+    isAuthenticated = authStatus === 'true';
+    updateAuthUI();
+}
+
+function updateAuthUI() {
+    const loginBtn = document.getElementById('adminLoginBtn');
+    const logoutBtn = document.getElementById('adminLogoutBtn');
+    const uploadBtn = document.getElementById('uploadPathwayBtn');
+    
+    if (isAuthenticated) {
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'block';
+        if (uploadBtn) uploadBtn.style.display = 'block';
+    } else {
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (uploadBtn) uploadBtn.style.display = 'none';
+    }
+}
+
+function handleAdminLogin() {
+    const password = prompt('Enter admin password to upload documents:');
+    if (password === ADMIN_PASSWORD) {
+        isAuthenticated = true;
+        sessionStorage.setItem('chcAdminAuthenticated', 'true');
+        updateAuthUI();
+        alert('Authentication successful! You can now upload documents.');
+    } else if (password !== null) {
+        alert('Incorrect password. Access denied.');
+    }
+}
+
+function handleAdminLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        isAuthenticated = false;
+        sessionStorage.removeItem('chcAdminAuthenticated');
+        updateAuthUI();
+    }
+}
+
+function handleUploadClick() {
+    console.log('Upload button clicked, authenticated:', isAuthenticated);
+    
+    if (!isAuthenticated) {
+        handleAdminLogin();
+        // After login, check if we should proceed
+        if (!isAuthenticated) {
+            return;
+        }
+    }
+    
+    // If authenticated, trigger file input
+    const fileInput = document.getElementById('pathwayFileInput');
+    if (fileInput) {
+        console.log('Clicking file input');
+        fileInput.click();
+    } else {
+        console.error('File input not found!');
+        alert('Error: File upload input not found. Please refresh the page.');
+    }
+}
+
+async function initializePathways() {
+    // Initialize IndexedDB first
+    try {
+        await initDB();
+    } catch (error) {
+        console.error('Failed to initialize IndexedDB:', error);
+        alert('Warning: Could not initialize database. Some features may not work.');
+    }
+    
+    await loadPathways();
+    checkAuthentication();
+    
+    // File upload handler
+    const fileInput = document.getElementById('pathwayFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            console.log('File input changed, files:', e.target.files);
+            
+            if (!isAuthenticated) {
+                alert('You must be authenticated to upload documents.');
+                e.target.value = '';
+                return;
+            }
+            
+            if (e.target.files && e.target.files.length > 0) {
+                console.log('Processing', e.target.files.length, 'file(s)');
+                handleFileUpload(e.target.files);
+                // Reset input so same file can be uploaded again
+                e.target.value = '';
+            } else {
+                console.log('No files selected');
+            }
+        });
+    } else {
+        console.error('File input element not found!');
+    }
+    
+    // Search handler
+    const searchInput = document.getElementById('pathwaySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            renderPathways(e.target.value);
+        });
+    }
+    
+    // Login/Logout button handlers
+    const loginBtn = document.getElementById('adminLoginBtn');
+    const logoutBtn = document.getElementById('adminLogoutBtn');
+    
+    if (loginBtn) {
+        loginBtn.addEventListener('click', handleAdminLogin);
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleAdminLogout);
+    }
+}
+
+// Make functions available globally
+window.viewPathway = viewPathway;
+window.downloadPathway = downloadPathway;
+window.deletePathway = deletePathway;
+window.handleUploadClick = handleUploadClick;
+
 
