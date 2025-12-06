@@ -80,12 +80,15 @@ header h1 {
 .form-group {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     margin-bottom: 5px;
     font-weight: 600;
     color: #555;
+    text-align: center;
 }
 
 .form-group input {
@@ -94,6 +97,9 @@ header h1 {
     border-radius: 6px;
     font-size: 1em;
     transition: border-color 0.3s;
+    max-width: 250px;
+    width: 100%;
+    text-align: center;
 }
 
 .form-group input:focus {
@@ -106,10 +112,14 @@ header h1 {
     display: flex;
     gap: 10px;
     align-items: center;
+    justify-content: center;
+    max-width: 300px;
+    margin: 0 auto;
 }
 
 .time-input-group input {
     flex: 1;
+    min-width: 0;
 }
 
 .tooltip-icon {
