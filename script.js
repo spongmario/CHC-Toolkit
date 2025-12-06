@@ -658,7 +658,7 @@ function calculateRemainingPatients() {
         const rickeyMessage = document.getElementById('rickeyMessage');
         if (rickeyMessage) {
             if (remainingCapacity < 0) {
-                rickeyMessage.textContent = "You Pulled a Rickey! Time to encourage patient's leave.";
+                rickeyMessage.textContent = "You Pulled a Rickey! Time to encourage patients leave.";
                 rickeyMessage.style.display = 'block';
             } else {
                 rickeyMessage.style.display = 'none';
