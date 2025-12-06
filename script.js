@@ -853,6 +853,10 @@ function navigateToPage(pageId) {
     // Check authentication when navigating to pathways page
     if (pageId === 'pathways') {
         checkAuthentication();
+        // Re-render pathways to show/hide admin buttons based on auth status
+        const searchInput = document.getElementById('pathwaySearch');
+        const currentFilter = searchInput ? searchInput.value : '';
+        renderPathways(currentFilter);
     }
 }
 
@@ -1080,7 +1084,6 @@ function renderPathways(filter = '') {
         <div class="pathway-list-container">
             ${filteredPathways.map((pathway) => {
                 const fileIcon = getFileIcon(pathway.fileType);
-                const uploadDate = new Date(pathway.uploadDate).toLocaleDateString();
                 // Find the actual index in the original pathways array
                 const actualIndex = pathways.findIndex(p => p.id === pathway.id);
                 return `
@@ -1088,11 +1091,13 @@ function renderPathways(filter = '') {
                         <div class="pathway-list-icon">${fileIcon}</div>
                         <div class="pathway-list-info">
                             <div class="pathway-list-name">${escapeHtml(pathway.name)}</div>
-                            <div class="pathway-list-meta">${formatFileSize(pathway.size)} • Uploaded ${uploadDate}</div>
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
-                            ${isAuthenticated ? `<button class="btn btn-danger btn-small" onclick="deletePathway(${actualIndex})">Delete</button>` : ''}
+                            ${isAuthenticated ? `
+                                <button class="btn btn-primary btn-small" onclick="renamePathway(${actualIndex})">Rename</button>
+                                <button class="btn btn-danger btn-small" onclick="deletePathway(${actualIndex})">Delete</button>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -1255,6 +1260,44 @@ function downloadPathway(index) {
     setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
 }
 
+async function renamePathway(index) {
+    if (!isAuthenticated) {
+        alert('You must be authenticated to rename documents.');
+        handleAdminLogin();
+        return;
+    }
+    
+    const pathway = pathways[index];
+    if (!pathway) return;
+    
+    const newName = prompt(`Rename "${pathway.name}" to:`, pathway.name);
+    
+    if (!newName || newName.trim() === '') {
+        return; // User cancelled or entered empty name
+    }
+    
+    const trimmedName = newName.trim();
+    if (trimmedName === pathway.name) {
+        return; // Name unchanged
+    }
+    
+    try {
+        // Update pathway name
+        pathway.name = trimmedName;
+        
+        // Save to IndexedDB
+        await savePathway(pathway);
+        
+        // Re-render to show updated name (preserve current search filter)
+        const searchInput = document.getElementById('pathwaySearch');
+        const currentFilter = searchInput ? searchInput.value : '';
+        renderPathways(currentFilter);
+    } catch (error) {
+        alert('Error renaming document: ' + error.message);
+        console.error('Rename error:', error);
+    }
+}
+
 async function deletePathway(index) {
     if (!isAuthenticated) {
         alert('You must be authenticated to delete documents.');
@@ -1311,7 +1354,11 @@ function handleAdminLogin() {
         isAuthenticated = true;
         sessionStorage.setItem('chcAdminAuthenticated', 'true');
         updateAuthUI();
-        alert('Authentication successful! You can now upload documents.');
+        // Re-render pathways to show admin buttons
+        const searchInput = document.getElementById('pathwaySearch');
+        const currentFilter = searchInput ? searchInput.value : '';
+        renderPathways(currentFilter);
+        alert('Authentication successful! You can now upload, rename, and delete documents.');
     } else if (password !== null) {
         alert('Incorrect password. Access denied.');
     }
@@ -1322,6 +1369,10 @@ function handleAdminLogout() {
         isAuthenticated = false;
         sessionStorage.removeItem('chcAdminAuthenticated');
         updateAuthUI();
+        // Re-render pathways to hide admin buttons
+        const searchInput = document.getElementById('pathwaySearch');
+        const currentFilter = searchInput ? searchInput.value : '';
+        renderPathways(currentFilter);
     }
 }
 
@@ -1408,6 +1459,7 @@ async function initializePathways() {
 // Make functions available globally
 window.viewPathway = viewPathway;
 window.downloadPathway = downloadPathway;
+window.renamePathway = renamePathway;
 window.deletePathway = deletePathway;
 window.handleUploadClick = handleUploadClick;
 
