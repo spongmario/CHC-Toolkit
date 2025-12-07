@@ -1,5 +1,10 @@
 [
   {
+    "name": "Procedure Consent",
+    "file": "forms/Procedure Consent.docx.pdf",
+    "type": "pdf"
+  },
+  {
     "name": "Project Access",
     "file": "forms/Project Access.pdf",
     "type": "pdf"
