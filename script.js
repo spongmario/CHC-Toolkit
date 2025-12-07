@@ -1624,11 +1624,20 @@ function parseLanguageFromFileName(fileName) {
         'russian': ['russian', 'русский', 'ru']
     };
     
-    // Check for language indicators
+    // Check for language indicators (using word boundaries for short patterns to avoid false matches)
     for (const [lang, patterns] of Object.entries(languagePatterns)) {
         for (const pattern of patterns) {
-            if (nameWithoutExt.includes(pattern)) {
-                return lang;
+            // For short patterns (2-3 chars), use word boundaries to avoid false matches
+            // For longer patterns, use simple includes check
+            if (pattern.length <= 3) {
+                const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                if (regex.test(nameWithoutExt)) {
+                    return lang;
+                }
+            } else {
+                if (nameWithoutExt.includes(pattern)) {
+                    return lang;
+                }
             }
         }
     }
