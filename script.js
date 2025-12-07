@@ -1326,7 +1326,7 @@ async function renamePathway(index) {
             <p>Copy this JSON and update <code>documents/custom-display-names.json</code> in your repository:</p>
             <textarea readonly style="width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:2px solid #ddd;border-radius:6px;">${updatedJSON}</textarea>
             <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
-                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();navigator.clipboard.writeText(\`${updatedJSON.replace(/`/g, '\\`')}\`);alert('Copied to clipboard!');" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
+                <button onclick="const textarea = this.closest('div[style*=\"position:fixed\"]').querySelector('textarea'); navigator.clipboard.writeText(textarea.value); alert('Copied to clipboard!'); this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
                 <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#718096;color:white;border:none;border-radius:6px;cursor:pointer;">Close</button>
             </div>
         </div>
@@ -1992,7 +1992,7 @@ async function renamePTGuide(index) {
             <p>Copy this JSON and update <code>documents/custom-display-names.json</code> in your repository:</p>
             <textarea readonly style="width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:2px solid #ddd;border-radius:6px;">${updatedJSON}</textarea>
             <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
-                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();navigator.clipboard.writeText(\`${updatedJSON.replace(/`/g, '\\`')}\`);alert('Copied to clipboard!');" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
+                <button onclick="const textarea = this.closest('div[style*=\"position:fixed\"]').querySelector('textarea'); navigator.clipboard.writeText(textarea.value); alert('Copied to clipboard!'); this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
                 <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#718096;color:white;border:none;border-radius:6px;cursor:pointer;">Close</button>
             </div>
         </div>
@@ -2295,7 +2295,7 @@ async function renameHandout(index) {
             <p>Copy this JSON and update <code>documents/custom-display-names.json</code> in your repository:</p>
             <textarea readonly style="width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:2px solid #ddd;border-radius:6px;">${updatedJSON}</textarea>
             <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
-                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();navigator.clipboard.writeText(\`${updatedJSON.replace(/`/g, '\\`')}\`);alert('Copied to clipboard!');" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
+                <button onclick="const textarea = this.closest('div[style*=\"position:fixed\"]').querySelector('textarea'); navigator.clipboard.writeText(textarea.value); alert('Copied to clipboard!'); this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
                 <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#718096;color:white;border:none;border-radius:6px;cursor:pointer;">Close</button>
             </div>
         </div>
@@ -2388,14 +2388,10 @@ function renderForms(filter = '') {
         );
     }
     
-    // Sort alphabetically by display name
-    filteredForms.sort((a, b) => {
-        const nameA = (a.displayName || a.name).toLowerCase();
-        const nameB = (b.displayName || b.name).toLowerCase();
-        return nameA.localeCompare(nameB);
-    });
+    // Group forms by base name and language
+    const groupedForms = groupGuidesByLanguage(filteredForms);
     
-    if (filteredForms.length === 0 && forms.length === 0) {
+    if (Object.keys(groupedForms).length === 0 && forms.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">📝</div>
@@ -2406,7 +2402,7 @@ function renderForms(filter = '') {
         return;
     }
     
-    if (filteredForms.length === 0) {
+    if (Object.keys(groupedForms).length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
@@ -2417,23 +2413,56 @@ function renderForms(filter = '') {
         return;
     }
     
-    // Create list HTML
+    // Sort base names alphabetically
+    const sortedBaseNames = Object.keys(groupedForms).sort((a, b) => 
+        a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+    
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${filteredForms.map((form) => {
-                const fileIcon = getFileIcon(form.fileType);
-                // Find the actual index in the original forms array
-                const actualIndex = forms.findIndex(f => f.id === form.id);
-                const displayName = form.displayName || form.name;
+            ${sortedBaseNames.map((baseName) => {
+                const languageVersions = groupedForms[baseName];
+                const languages = Object.keys(languageVersions);
+                const hasMultipleLanguages = languages.length > 1;
+                
+                // Get English version if available, otherwise get the first one
+                const defaultForm = languageVersions['english'] || languageVersions[languages[0]];
+                const defaultIndex = forms.findIndex(f => f.id === defaultForm.id);
+                
+                const fileIcon = getFileIcon(defaultForm.fileType);
+                const displayName = defaultForm.displayName || baseName;
+                
+                // Get non-English languages only
+                const nonEnglishLanguages = languages.filter(lang => lang !== 'english').sort();
+                const hasNonEnglishLanguages = nonEnglishLanguages.length > 0;
+                
+                // Generate language buttons for non-English languages only
+                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
+                const languageButton = hasNonEnglishLanguages ? nonEnglishLanguages.map(lang => {
+                    const langForm = languageVersions[lang];
+                    return `
+                        <button class="btn btn-small btn-secondary language-btn" 
+                                onclick="event.stopPropagation(); viewFormByLanguage('${escapedBaseNameForButtons}', '${lang}')"
+                                title="View ${getLanguageDisplayName(lang)} version">
+                            ${getLanguageDisplayName(lang)}
+                        </button>
+                    `;
+                }).join('') : '';
+                
+                // Always open English by default when clicking the main item (or first available if no English)
+                const defaultLanguage = languageVersions['english'] ? 'english' : languages[0];
+                const escapedBaseName = baseName.replace(/'/g, "\\'");
+                
                 return `
-                    <div class="pathway-list-item" onclick="viewForm(${actualIndex})">
+                    <div class="pathway-list-item" onclick="viewFormByLanguage('${escapedBaseName}', '${defaultLanguage}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
-                        <div class="pathway-list-info">
+                        <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
                             <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                            ${languageButton}
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary btn-small" onclick="viewForm(${actualIndex})">View</button>
-                            <button class="btn btn-secondary btn-small" onclick="downloadForm(${actualIndex})">Download</button>
+                            <button class="btn btn-primary btn-small" onclick="viewFormByLanguage('${escapedBaseName}', '${defaultLanguage}')">View</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadForm(${defaultIndex})">Download</button>
                         </div>
                     </div>
                 `;
@@ -2446,6 +2475,24 @@ function viewForm(index) {
     const form = forms[index];
     if (!form) return;
     
+    // Open document from GitHub URL (defaults to English)
+    openFormWindow(form);
+}
+
+function viewFormByLanguage(baseName, language) {
+    // Find the form with matching base name and language
+    const form = forms.find(f => {
+        const formBaseName = getBaseName(f.name);
+        const formLanguage = parseLanguageFromFileName(f.name);
+        return formBaseName === baseName && formLanguage === language;
+    });
+    
+    if (form) {
+        openFormWindow(form);
+    }
+}
+
+function openFormWindow(form) {
     // Open document from GitHub URL
     const newWindow = window.open();
     if (form.fileType === 'pdf') {
@@ -2523,7 +2570,7 @@ async function renameForm(index) {
             <p>Copy this JSON and update <code>documents/custom-display-names.json</code> in your repository:</p>
             <textarea readonly style="width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:2px solid #ddd;border-radius:6px;">${updatedJSON}</textarea>
             <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
-                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();navigator.clipboard.writeText(\`${updatedJSON.replace(/`/g, '\\`')}\`);alert('Copied to clipboard!');" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
+                <button onclick="const textarea = this.closest('div[style*=\"position:fixed\"]').querySelector('textarea'); navigator.clipboard.writeText(textarea.value); alert('Copied to clipboard!'); this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
                 <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#718096;color:white;border:none;border-radius:6px;cursor:pointer;">Close</button>
             </div>
         </div>
@@ -2556,6 +2603,7 @@ async function initializeForms() {
 
 // Make forms functions available globally
 window.viewForm = viewForm;
+window.viewFormByLanguage = viewFormByLanguage;
 window.downloadForm = downloadForm;
 window.renameForm = renameForm;
 window.deleteForm = deleteForm;
