@@ -1606,6 +1606,96 @@ async function deletePTRecommendationFromDB(id) {
     }
 }
 
+// Language detection and grouping functions
+function parseLanguageFromFileName(fileName) {
+    // Remove file extension
+    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '').toLowerCase();
+    
+    // Common language indicators
+    const languagePatterns = {
+        'spanish': ['spanish', 'español', 'espanol', 'esp'],
+        'french': ['french', 'français', 'francais', 'fr'],
+        'german': ['german', 'deutsch', 'de'],
+        'chinese': ['chinese', '中文', 'ch'],
+        'japanese': ['japanese', '日本語', 'ja'],
+        'korean': ['korean', '한국어', 'ko'],
+        'portuguese': ['portuguese', 'português', 'portugues', 'pt'],
+        'italian': ['italian', 'italiano', 'it'],
+        'russian': ['russian', 'русский', 'ru']
+    };
+    
+    // Check for language indicators
+    for (const [lang, patterns] of Object.entries(languagePatterns)) {
+        for (const pattern of patterns) {
+            if (nameWithoutExt.includes(pattern)) {
+                return lang;
+            }
+        }
+    }
+    
+    // Default to English if no language indicator found
+    return 'english';
+}
+
+function getBaseName(fileName) {
+    // Remove file extension
+    let nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+    
+    // Remove language indicators to get base name
+    const languagePatterns = [
+        'spanish', 'español', 'espanol', 'esp',
+        'french', 'français', 'francais', 'fr',
+        'german', 'deutsch', 'de',
+        'chinese', '中文', 'ch',
+        'japanese', '日本語', 'ja',
+        'korean', '한국어', 'ko',
+        'portuguese', 'português', 'portugues', 'pt',
+        'italian', 'italiano', 'it',
+        'russian', 'русский', 'ru'
+    ];
+    
+    const nameLower = nameWithoutExt.toLowerCase();
+    for (const pattern of languagePatterns) {
+        const regex = new RegExp(`\\s*${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'i');
+        nameWithoutExt = nameWithoutExt.replace(regex, '').trim();
+    }
+    
+    return nameWithoutExt;
+}
+
+function groupGuidesByLanguage(guides) {
+    const grouped = {};
+    
+    guides.forEach(guide => {
+        const baseName = getBaseName(guide.name);
+        const language = parseLanguageFromFileName(guide.name);
+        
+        if (!grouped[baseName]) {
+            grouped[baseName] = {};
+        }
+        
+        grouped[baseName][language] = guide;
+    });
+    
+    return grouped;
+}
+
+function getLanguageDisplayName(language) {
+    const displayNames = {
+        'english': 'English',
+        'spanish': 'Spanish',
+        'french': 'French',
+        'german': 'German',
+        'chinese': 'Chinese',
+        'japanese': 'Japanese',
+        'korean': 'Korean',
+        'portuguese': 'Portuguese',
+        'italian': 'Italian',
+        'russian': 'Russian'
+    };
+    return displayNames[language] || language.charAt(0).toUpperCase() + language.slice(1);
+}
+
 function renderPTGuides(filter = '') {
     const container = document.getElementById('ptList');
     if (!container) return;
@@ -1615,15 +1705,15 @@ function renderPTGuides(filter = '') {
     if (filter) {
         const searchLower = filter.toLowerCase();
         filteredGuides = filteredGuides.filter(g => 
-            g.name.toLowerCase().includes(searchLower)
+            g.name.toLowerCase().includes(searchLower) ||
+            (g.displayName && g.displayName.toLowerCase().includes(searchLower))
         );
     }
     
-    filteredGuides.sort((a, b) => {
-        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    });
+    // Group guides by base name and language
+    const groupedGuides = groupGuidesByLanguage(filteredGuides);
     
-    if (filteredGuides.length === 0 && ptGuides.length === 0) {
+    if (Object.keys(groupedGuides).length === 0 && ptGuides.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🏃</div>
@@ -1634,7 +1724,7 @@ function renderPTGuides(filter = '') {
         return;
     }
     
-    if (filteredGuides.length === 0) {
+    if (Object.keys(groupedGuides).length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
@@ -1645,19 +1735,57 @@ function renderPTGuides(filter = '') {
         return;
     }
     
+    // Sort base names alphabetically
+    const sortedBaseNames = Object.keys(groupedGuides).sort((a, b) => 
+        a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+    
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${filteredGuides.map((guide) => {
-                const fileIcon = getFileIcon(guide.fileType);
-                const actualIndex = ptGuides.findIndex(g => g.id === guide.id);
+            ${sortedBaseNames.map((baseName) => {
+                const languageVersions = groupedGuides[baseName];
+                const languages = Object.keys(languageVersions);
+                const hasMultipleLanguages = languages.length > 1;
+                
+                // Get English version if available, otherwise get the first one
+                const defaultGuide = languageVersions['english'] || languageVersions[languages[0]];
+                const defaultIndex = ptGuides.findIndex(g => g.id === defaultGuide.id);
+                
+                const fileIcon = getFileIcon(defaultGuide.fileType);
+                const displayName = defaultGuide.displayName || baseName;
+                
+                // Generate language buttons if multiple languages exist
+                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
+                const languageButtons = hasMultipleLanguages ? `
+                    <div class="language-buttons" onclick="event.stopPropagation()">
+                        ${languages.sort().map(lang => {
+                            const langGuide = languageVersions[lang];
+                            const langIndex = ptGuides.findIndex(g => g.id === langGuide.id);
+                            const isEnglish = lang === 'english';
+                            return `
+                                <button class="btn btn-small ${isEnglish ? 'btn-primary' : 'btn-secondary'} language-btn" 
+                                        onclick="viewPTGuideByLanguage('${escapedBaseNameForButtons}', '${lang}')"
+                                        title="View ${getLanguageDisplayName(lang)} version">
+                                    ${getLanguageDisplayName(lang)}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : '';
+                
+                // Determine which language to open by default (English if available)
+                const defaultLanguage = languageVersions['english'] ? 'english' : languages[0];
+                const escapedBaseName = baseName.replace(/'/g, "\\'");
+                
                 return `
-                    <div class="pathway-list-item" onclick="viewPTGuide(${actualIndex})">
+                    <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${defaultLanguage}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
-                        <div class="pathway-list-info">
-                            <div class="pathway-list-name">${escapeHtml(guide.displayName || guide.name)}</div>
+                        <div class="pathway-list-info" style="flex: 1;">
+                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                            ${languageButtons}
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${actualIndex})">Download</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${defaultIndex})">Download</button>
                         </div>
                     </div>
                 `;
@@ -1722,6 +1850,24 @@ function viewPTGuide(index) {
     const guide = ptGuides[index];
     if (!guide) return;
     
+    // Open document from GitHub URL (defaults to English)
+    openPTGuideWindow(guide);
+}
+
+function viewPTGuideByLanguage(baseName, language) {
+    // Find the guide with matching base name and language
+    const guide = ptGuides.find(g => {
+        const guideBaseName = getBaseName(g.name);
+        const guideLanguage = parseLanguageFromFileName(g.name);
+        return guideBaseName === baseName && guideLanguage === language;
+    });
+    
+    if (guide) {
+        openPTGuideWindow(guide);
+    }
+}
+
+function openPTGuideWindow(guide) {
     // Open document from GitHub URL
     const newWindow = window.open();
     if (guide.fileType === 'pdf') {
@@ -1831,6 +1977,7 @@ async function initializePT() {
 
 // Make PT functions available globally
 window.viewPTGuide = viewPTGuide;
+window.viewPTGuideByLanguage = viewPTGuideByLanguage;
 window.downloadPTGuide = downloadPTGuide;
 window.renamePTGuide = renamePTGuide;
 window.deletePTGuide = deletePTGuide;
