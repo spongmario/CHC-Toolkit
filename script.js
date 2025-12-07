@@ -1754,35 +1754,33 @@ function renderPTGuides(filter = '') {
                 const fileIcon = getFileIcon(defaultGuide.fileType);
                 const displayName = defaultGuide.displayName || baseName;
                 
-                // Generate language buttons if multiple languages exist
-                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
-                const languageButtons = hasMultipleLanguages ? `
-                    <div class="language-buttons" onclick="event.stopPropagation()">
-                        ${languages.sort().map(lang => {
-                            const langGuide = languageVersions[lang];
-                            const langIndex = ptGuides.findIndex(g => g.id === langGuide.id);
-                            const isEnglish = lang === 'english';
-                            return `
-                                <button class="btn btn-small ${isEnglish ? 'btn-primary' : 'btn-secondary'} language-btn" 
-                                        onclick="viewPTGuideByLanguage('${escapedBaseNameForButtons}', '${lang}')"
-                                        title="View ${getLanguageDisplayName(lang)} version">
-                                    ${getLanguageDisplayName(lang)}
-                                </button>
-                            `;
-                        }).join('')}
-                    </div>
-                ` : '';
+                // Get non-English languages only
+                const nonEnglishLanguages = languages.filter(lang => lang !== 'english').sort();
+                const hasNonEnglishLanguages = nonEnglishLanguages.length > 0;
                 
-                // Determine which language to open by default (English if available)
+                // Generate language buttons for non-English languages only
+                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
+                const languageButton = hasNonEnglishLanguages ? nonEnglishLanguages.map(lang => {
+                    const langGuide = languageVersions[lang];
+                    return `
+                        <button class="btn btn-small btn-secondary language-btn" 
+                                onclick="event.stopPropagation(); viewPTGuideByLanguage('${escapedBaseNameForButtons}', '${lang}')"
+                                title="View ${getLanguageDisplayName(lang)} version">
+                            ${getLanguageDisplayName(lang)}
+                        </button>
+                    `;
+                }).join('') : '';
+                
+                // Always open English by default when clicking the main item (or first available if no English)
                 const defaultLanguage = languageVersions['english'] ? 'english' : languages[0];
                 const escapedBaseName = baseName.replace(/'/g, "\\'");
                 
                 return `
                     <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${defaultLanguage}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
-                        <div class="pathway-list-info" style="flex: 1;">
+                        <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
                             <div class="pathway-list-name">${escapeHtml(displayName)}</div>
-                            ${languageButtons}
+                            ${languageButton}
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${defaultIndex})">Download</button>
