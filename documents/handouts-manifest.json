@@ -1,12 +1,32 @@
 [
   {
-    "name": "Snohomish County STI Clinic",
-    "file": "handouts/Sno DOH STI handout.pdf",
+    "name": "CHC Dental",
+    "file": "handouts/CHC Dental.pdf",
     "type": "pdf"
   },
   {
-    "name": "Sports Physical Form",
-    "file": "handouts/Sports Physical.pdf",
+    "name": "NeilMed",
+    "file": "handouts/NeilMed.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Pregnant People Diet",
+    "file": "handouts/Pregnant People Diet.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Project Access",
+    "file": "handouts/Project Access.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Project Access (Spanish)",
+    "file": "handouts/Project Access Spanish.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Snohomish County STI Clinic",
+    "file": "handouts/Sno DOH STI handout.pdf",
     "type": "pdf"
   }
 ]

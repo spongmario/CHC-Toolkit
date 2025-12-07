@@ -881,6 +881,11 @@ function navigateToPage(pageId) {
     if (pageId === 'patient-resources') {
         initializeHandouts();
     }
+    
+    // Initialize Forms when navigating to forms page
+    if (pageId === 'forms') {
+        initializeForms();
+    }
 }
 
 function initializeNavigation() {
@@ -1371,7 +1376,8 @@ let ptGuides = [];
 let customDisplayNames = {
     pathways: {},
     ptGuides: {},
-    handouts: {}
+    handouts: {},
+    forms: {}
 };
 
 // Initialize PT DB stores
@@ -1494,12 +1500,12 @@ async function loadCustomDisplayNames() {
             } catch (e) {
                 console.error('Error parsing localStorage custom names:', e);
                 if (!customDisplayNames) {
-                    customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {} };
+                    customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {}, forms: {} };
                 }
             }
         } else {
             if (!customDisplayNames) {
-                customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {} };
+                customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {}, forms: {} };
             }
         }
     }
@@ -1514,6 +1520,9 @@ async function loadCustomDisplayNames() {
     if (!customDisplayNames.handouts) {
         customDisplayNames.handouts = {};
     }
+    if (!customDisplayNames.forms) {
+        customDisplayNames.forms = {};
+    }
 }
 
 // Get display name for a file (custom name or original)
@@ -1526,13 +1535,15 @@ function getDisplayName(filePath, originalName, type) {
         category = 'ptGuides';
     } else if (type === 'handout') {
         category = 'handouts';
+    } else if (type === 'form') {
+        category = 'forms';
     } else {
         category = 'pathways'; // default
     }
     
     // Ensure customDisplayNames is initialized
     if (!customDisplayNames) {
-        customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {} };
+        customDisplayNames = { pathways: {}, ptGuides: {}, handouts: {}, forms: {} };
     }
     if (!customDisplayNames[category]) {
         customDisplayNames[category] = {};
@@ -2025,6 +2036,11 @@ window.deletePTGuide = deletePTGuide;
 const HANDOUTS_STORE_NAME = 'handouts';
 let handouts = [];
 
+// ==================== Forms System ====================
+
+const FORMS_STORE_NAME = 'forms';
+let forms = [];
+
 // Initialize Handouts DB stores
 function initHandoutsDB() {
     return new Promise((resolve, reject) => {
@@ -2315,6 +2331,234 @@ window.viewHandout = viewHandout;
 window.downloadHandout = downloadHandout;
 window.renameHandout = renameHandout;
 window.deleteHandout = deleteHandout;
+
+// ==================== Forms System ====================
+
+async function loadForms() {
+    try {
+        // Load manifest from GitHub
+        const manifestUrl = `${GITHUB_BASE_URL}/documents/forms-manifest.json`;
+        console.log('Loading forms from:', manifestUrl);
+        
+        const response = await fetch(manifestUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to load forms manifest: ${response.statusText}`);
+        }
+        
+        const manifest = await response.json();
+        await loadCustomDisplayNames(); // Load custom names from GitHub
+        forms = manifest.map((item, index) => {
+            return {
+                id: index,
+                file: item.file,
+                name: item.name,
+                displayName: getDisplayName(item.file, item.name, 'form'),
+                fileType: item.type || getFileExtension(item.name),
+                url: `${GITHUB_BASE_URL}/documents/${item.file}`
+            };
+        });
+        
+        console.log('Loaded', forms.length, 'forms from GitHub');
+        renderForms();
+        return forms;
+    } catch (error) {
+        console.error('Error loading forms:', error);
+        forms = [];
+        renderForms();
+    }
+}
+
+function renderForms(filter = '') {
+    const container = document.getElementById('formsList');
+    if (!container) return;
+    
+    // Recalculate display names to ensure they're up to date
+    forms.forEach(form => {
+        form.displayName = getDisplayName(form.file, form.name, 'form');
+    });
+    
+    let filteredForms = [...forms];
+    
+    // Apply filter if provided
+    if (filter) {
+        const searchLower = filter.toLowerCase();
+        filteredForms = filteredForms.filter(f => 
+            (f.displayName || f.name).toLowerCase().includes(searchLower) ||
+            f.name.toLowerCase().includes(searchLower)
+        );
+    }
+    
+    // Sort alphabetically by display name
+    filteredForms.sort((a, b) => {
+        const nameA = (a.displayName || a.name).toLowerCase();
+        const nameB = (b.displayName || b.name).toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+    
+    if (filteredForms.length === 0 && forms.length === 0) {
+        container.innerHTML = `
+            <div class="empty-pathways">
+                <div class="empty-icon">📝</div>
+                <h3>No Forms Yet</h3>
+                <p>Forms are managed by administrators. Contact your administrator to add documents.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    if (filteredForms.length === 0) {
+        container.innerHTML = `
+            <div class="empty-pathways">
+                <div class="empty-icon">🔍</div>
+                <h3>No Forms Found</h3>
+                <p>No forms match your search criteria.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Create list HTML
+    container.innerHTML = `
+        <div class="pathway-list-container">
+            ${filteredForms.map((form) => {
+                const fileIcon = getFileIcon(form.fileType);
+                // Find the actual index in the original forms array
+                const actualIndex = forms.findIndex(f => f.id === form.id);
+                const displayName = form.displayName || form.name;
+                return `
+                    <div class="pathway-list-item" onclick="viewForm(${actualIndex})">
+                        <div class="pathway-list-icon">${fileIcon}</div>
+                        <div class="pathway-list-info">
+                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                        </div>
+                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                            <button class="btn btn-primary btn-small" onclick="viewForm(${actualIndex})">View</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadForm(${actualIndex})">Download</button>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function viewForm(index) {
+    const form = forms[index];
+    if (!form) return;
+    
+    // Open document from GitHub URL
+    const newWindow = window.open();
+    if (form.fileType === 'pdf') {
+        // For PDFs, embed directly
+        newWindow.document.write(`
+            <html>
+                <head><title>${escapeHtml(form.name)}</title></head>
+                <body style="margin:0;padding:0;">
+                    <embed src="${form.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
+                </body>
+            </html>
+        `);
+    } else {
+        // For other files, try to display or download
+        newWindow.document.write(`
+            <html>
+                <head><title>${escapeHtml(form.name)}</title></head>
+                <body style="margin:20px;font-family:Arial;">
+                    <h2>${escapeHtml(form.name)}</h2>
+                    <p>This file type cannot be displayed in the browser. Please download it to view.</p>
+                    <button onclick="window.location.href='${form.url}'" download="${escapeHtml(form.name)}" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">
+                        Download File
+                    </button>
+                </body>
+            </html>
+        `);
+    }
+}
+
+function downloadForm(index) {
+    const form = forms[index];
+    if (!form) return;
+    
+    // Direct download from GitHub
+    const link = document.createElement('a');
+    link.href = form.url;
+    link.download = form.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function renameForm(index) {
+    const form = forms[index];
+    if (!form) return;
+    
+    const currentName = form.displayName || form.name;
+    const newName = prompt(`Rename "${currentName}" to:`, currentName);
+    
+    if (!newName || newName.trim() === '') {
+        return; // User cancelled or entered empty name
+    }
+    
+    const trimmedName = newName.trim();
+    if (trimmedName === currentName) {
+        return; // Name unchanged
+    }
+    
+    // Update custom display name in memory
+    if (!customDisplayNames.forms) {
+        customDisplayNames.forms = {};
+    }
+    customDisplayNames.forms[form.file] = trimmedName;
+    
+    // Update the form's display name
+    form.displayName = trimmedName;
+    
+    // Show updated JSON for user to copy
+    const updatedJSON = generateCustomNamesJSON();
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+        <div style="background:white;padding:30px;border-radius:12px;max-width:600px;max-height:80vh;overflow:auto;">
+            <h3 style="margin-top:0;color:#667eea;">Update custom-display-names.json</h3>
+            <p>Copy this JSON and update <code>documents/custom-display-names.json</code> in your repository:</p>
+            <textarea readonly style="width:100%;height:200px;font-family:monospace;font-size:12px;padding:10px;border:2px solid #ddd;border-radius:6px;">${updatedJSON}</textarea>
+            <div style="margin-top:15px;display:flex;gap:10px;justify-content:flex-end;">
+                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();navigator.clipboard.writeText(\`${updatedJSON.replace(/`/g, '\\`')}\`);alert('Copied to clipboard!');" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;">Copy & Close</button>
+                <button onclick="this.closest('div[style*=\"position:fixed\"]').remove();" style="padding:10px 20px;background:#718096;color:white;border:none;border-radius:6px;cursor:pointer;">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Also save to localStorage as temporary cache
+    localStorage.setItem('chcCustomDisplayNames', JSON.stringify(customDisplayNames));
+    
+    // Re-render (preserve current search filter)
+    const searchInput = document.getElementById('formsSearch');
+    const currentFilter = searchInput ? searchInput.value : '';
+    renderForms(currentFilter);
+}
+
+async function deleteForm(index) {
+    alert('To delete documents, remove them from the forms-manifest.json file and delete the file from the documents/handouts folder in the repository.');
+}
+
+async function initializeForms() {
+    await loadForms();
+    
+    const searchInput = document.getElementById('formsSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            renderForms(e.target.value);
+        });
+    }
+}
+
+// Make forms functions available globally
+window.viewForm = viewForm;
+window.downloadForm = downloadForm;
+window.renameForm = renameForm;
+window.deleteForm = deleteForm;
 
 
 
