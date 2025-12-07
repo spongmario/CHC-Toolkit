@@ -1,5 +1,7 @@
 {
-  "pathways": {},
+  "pathways": {
+    "pathways/MDM.pdf": "Billing/Coding"
+  },
   "ptGuides": {
     "pt-guides/Lower Back.pdf": "Lower Back"
   }

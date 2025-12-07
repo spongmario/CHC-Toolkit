@@ -1334,7 +1334,10 @@ const PT_RECOMMENDATIONS_STORE = 'ptRecommendations';
 let ptGuides = [];
 
 // Store custom display names (admin-only feature)
-let customDisplayNames = {};
+let customDisplayNames = {
+    pathways: {},
+    ptGuides: {}
+};
 
 // Initialize PT DB stores
 function initPTDB() {
@@ -1435,7 +1438,7 @@ async function loadCustomDisplayNames() {
         if (response.ok) {
             const data = await response.json();
             customDisplayNames = data;
-            console.log('Loaded custom display names from GitHub');
+            console.log('Loaded custom display names from GitHub:', customDisplayNames);
         } else {
             console.log('Custom display names file not found, using defaults');
             customDisplayNames = { pathways: {}, ptGuides: {} };
@@ -1459,7 +1462,11 @@ async function loadCustomDisplayNames() {
 function getDisplayName(filePath, originalName, type) {
     // filePath is like "pathways/file.pdf" or "pt-guides/file.pdf"
     const category = type === 'pathway' ? 'pathways' : 'ptGuides';
-    return customDisplayNames[category]?.[filePath] || originalName;
+    const customName = customDisplayNames[category]?.[filePath];
+    if (customName) {
+        console.log(`Using custom display name: "${customName}" for "${filePath}"`);
+    }
+    return customName || originalName;
 }
 
 // Generate updated JSON content for the custom-display-names.json file
