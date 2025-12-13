@@ -825,6 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize navigation
     initializeNavigation();
+    initializeHamburgerMenu();
     
     // Initialize Clinical Pathways
     initializePathways();
@@ -896,8 +897,89 @@ function initializeNavigation() {
         item.addEventListener('click', function() {
             const pageId = this.getAttribute('data-page');
             navigateToPage(pageId);
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth <= 768 && closeSidebar) {
+                closeSidebar();
+            }
         });
     });
+}
+
+// Hamburger Menu Toggle Functionality
+let closeSidebar = null;
+
+function initializeHamburgerMenu() {
+    const hamburgerMenu = document.getElementById('hamburgerMenu');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (!hamburgerMenu || !sidebar || !sidebarOverlay) return;
+
+    function openSidebar() {
+        sidebar.classList.add('mobile-open');
+        sidebarOverlay.classList.add('active');
+        hamburgerMenu.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeSidebar = function() {
+        sidebar.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('active');
+        hamburgerMenu.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
+    function toggleSidebar() {
+        if (sidebar.classList.contains('mobile-open')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    }
+
+    // Toggle on hamburger click
+    hamburgerMenu.addEventListener('click', toggleSidebar);
+
+    // Close on overlay click
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+            closeSidebar();
+        }
+    });
+
+    // Handle window resize - ensure sidebar behavior is correct
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            // Desktop: remove mobile classes, sidebar always visible
+            sidebar.classList.remove('mobile-open');
+            sidebarOverlay.classList.remove('active');
+            hamburgerMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        } else {
+            // Mobile: ensure sidebar is closed if it was open
+            if (sidebar.classList.contains('mobile-open')) {
+                // Keep it open if user had it open
+            } else {
+                sidebar.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('active');
+                hamburgerMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+    });
+
+    // Initialize sidebar state based on screen size
+    // On desktop (>768px), sidebar is always visible (no class needed)
+    // On mobile (<=768px), sidebar starts closed
+    if (window.innerWidth <= 768) {
+        sidebar.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('active');
+        hamburgerMenu.classList.remove('active');
+    }
 }
 
 // Make navigateToPage available globally for buttons
