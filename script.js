@@ -1544,12 +1544,16 @@ async function loadPTGuides() {
         });
         
         console.log('Loaded', ptGuides.length, 'PT guides from GitHub');
-        renderPTGuides();
+        updateLanguageTabs('pt');
+        const language = getActiveLanguage('pt');
+        renderPTGuides('', language);
         return ptGuides;
     } catch (error) {
         console.error('Error loading PT guides:', error);
         ptGuides = [];
-        renderPTGuides();
+        updateLanguageTabs('pt');
+        const language = getActiveLanguage('pt');
+        renderPTGuides('', language);
     }
 }
 
@@ -1830,12 +1834,30 @@ function getLanguageDisplayName(language) {
     return displayNames[language] || language.charAt(0).toUpperCase() + language.slice(1);
 }
 
-function renderPTGuides(filter = '') {
+function renderPTGuides(filter = '', language = null) {
     const container = document.getElementById('ptList');
     if (!container) return;
     
+    // Check available languages to determine if we should filter
+    const availableLanguages = getAvailableLanguages('pt');
+    const hasMultipleLanguages = availableLanguages.length > 1;
+    
+    // Get active language from tab if not provided
+    if (language === null) {
+        language = getActiveLanguage('pt');
+    }
+    
     let filteredGuides = [...ptGuides];
     
+    // Filter by language only if multiple languages are available
+    if (hasMultipleLanguages) {
+        filteredGuides = filteredGuides.filter(g => {
+            const guideLanguage = parseLanguageFromFileName(g.name);
+            return guideLanguage === language;
+        });
+    }
+    
+    // Then apply search filter
     if (filter) {
         const searchLower = filter.toLowerCase();
         filteredGuides = filteredGuides.filter(g => 
@@ -1844,10 +1866,7 @@ function renderPTGuides(filter = '') {
         );
     }
     
-    // Group guides by base name and language
-    const groupedGuides = groupGuidesByLanguage(filteredGuides);
-    
-    if (Object.keys(groupedGuides).length === 0 && ptGuides.length === 0) {
+    if (filteredGuides.length === 0 && ptGuides.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🏃</div>
@@ -1858,73 +1877,50 @@ function renderPTGuides(filter = '') {
         return;
     }
     
-    if (Object.keys(groupedGuides).length === 0) {
+    if (filteredGuides.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Guides Found</h3>
-                <p>No guides match your search criteria.</p>
+                <p>No ${getLanguageDisplayName(language)} guides match your search criteria.</p>
             </div>
         `;
         return;
     }
     
-    // Sort base names alphabetically
-    const sortedBaseNames = Object.keys(groupedGuides).sort((a, b) => 
-        a.toLowerCase().localeCompare(b.toLowerCase())
-    );
+    // Sort alphabetically by display name
+    filteredGuides.sort((a, b) => {
+        const nameA = (a.displayName || a.name).toLowerCase();
+        const nameB = (b.displayName || b.name).toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
     
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${sortedBaseNames.map((baseName) => {
-                const languageVersions = groupedGuides[baseName];
-                const languages = Object.keys(languageVersions);
-                const hasMultipleLanguages = languages.length > 1;
-                
-                // Get English version if available, otherwise get the first one
-                const defaultGuide = languageVersions['english'] || languageVersions[languages[0]];
-                const defaultIndex = ptGuides.findIndex(g => g.id === defaultGuide.id);
-                
-                const fileIcon = getFileIcon(defaultGuide.fileType);
-                const displayName = defaultGuide.displayName || baseName;
-                
-                // Get non-English languages only
-                const nonEnglishLanguages = languages.filter(lang => lang !== 'english').sort();
-                const hasNonEnglishLanguages = nonEnglishLanguages.length > 0;
-                
-                // Generate language buttons for non-English languages only
-                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
-                const languageButton = hasNonEnglishLanguages ? nonEnglishLanguages.map(lang => {
-                    const langGuide = languageVersions[lang];
-                    return `
-                        <button class="btn btn-small btn-secondary language-btn" 
-                                onclick="event.stopPropagation(); viewPTGuideByLanguage('${escapedBaseNameForButtons}', '${lang}')"
-                                title="View ${getLanguageDisplayName(lang)} version">
-                            ${getLanguageDisplayName(lang)}
-                        </button>
-                    `;
-                }).join('') : '';
-                
-                // Always open English by default when clicking the main item (or first available if no English)
-                const defaultLanguage = languageVersions['english'] ? 'english' : languages[0];
-                const escapedBaseName = baseName.replace(/'/g, "\\'");
+            ${filteredGuides.map((guide) => {
+                const fileIcon = getFileIcon(guide.fileType);
+                const displayName = guide.displayName || guide.name;
+                const actualIndex = ptGuides.findIndex(g => g.id === guide.id);
+                const escapedBaseName = getBaseName(guide.name).replace(/'/g, "\\'");
                 
                 return `
-                    <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${defaultLanguage}')">
+                    <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${language}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
                         <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
                             <div class="pathway-list-name">${escapeHtml(displayName)}</div>
-                            ${languageButton}
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary btn-small" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${defaultLanguage}')">View</button>
-                            <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${defaultIndex})">Download</button>
+                            <button class="btn btn-primary btn-small" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${language}')">View</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${actualIndex})">Download</button>
                         </div>
                     </div>
                 `;
             }).join('')}
         </div>
     `;
+    
+    // Update tab visibility based on available languages
+    updateLanguageTabs('pt');
 }
 
 
@@ -1973,7 +1969,8 @@ async function handlePTFileUpload(files) {
         }
     }
     
-    renderPTGuides();
+    const language = getActiveLanguage('pt');
+    renderPTGuides('', language);
     if (processedCount > 0) {
         alert(`Successfully uploaded ${processedCount} file(s)!`);
     }
@@ -2088,7 +2085,8 @@ async function renamePTGuide(index) {
     
     // Re-render
     const searchInput = document.getElementById('ptSearch');
-    renderPTGuides(searchInput ? searchInput.value : '');
+    const language = getActiveLanguage('pt');
+    renderPTGuides(searchInput ? searchInput.value : '', language);
 }
 
 async function deletePTGuide(index) {
@@ -2103,8 +2101,106 @@ async function initializePT() {
     const searchInput = document.getElementById('ptSearch');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
-            renderPTGuides(e.target.value);
+            const language = getActiveLanguage('pt');
+            renderPTGuides(e.target.value, language);
         });
+    }
+}
+
+// Language tab switching function
+function switchLanguageTab(section, language) {
+    // Update active tab
+    const tabs = document.querySelectorAll(`.language-tab[data-section="${section}"]`);
+    tabs.forEach(tab => {
+        if (tab.dataset.language === language) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Re-render the appropriate section
+    const searchInputs = {
+        'pt': document.getElementById('ptSearch'),
+        'handouts': document.getElementById('handoutsSearch'),
+        'forms': document.getElementById('formsSearch')
+    };
+    
+    const searchValue = searchInputs[section] ? searchInputs[section].value : '';
+    
+    if (section === 'pt') {
+        renderPTGuides(searchValue, language);
+    } else if (section === 'handouts') {
+        renderHandouts(searchValue, language);
+    } else if (section === 'forms') {
+        renderForms(searchValue, language);
+    }
+}
+
+// Get active language for a section
+function getActiveLanguage(section) {
+    const activeTab = document.querySelector(`.language-tab[data-section="${section}"].active`);
+    return activeTab ? activeTab.dataset.language : 'english';
+}
+
+// Get available languages for a section
+function getAvailableLanguages(section) {
+    let items = [];
+    if (section === 'pt') {
+        items = ptGuides;
+    } else if (section === 'handouts') {
+        items = handouts;
+    } else if (section === 'forms') {
+        items = forms;
+    }
+    
+    const languages = new Set();
+    items.forEach(item => {
+        const lang = parseLanguageFromFileName(item.name);
+        languages.add(lang);
+    });
+    
+    return Array.from(languages);
+}
+
+// Update tab visibility based on available languages
+function updateLanguageTabs(section) {
+    const tabsContainer = document.querySelector(`.language-tabs[data-section="${section}"]`);
+    
+    if (!tabsContainer) return;
+    
+    const availableLanguages = getAvailableLanguages(section);
+    const hasMultipleLanguages = availableLanguages.length > 1;
+    
+    // Hide/show tabs container
+    if (hasMultipleLanguages) {
+        tabsContainer.style.display = 'flex';
+        
+        // Show/hide individual tabs
+        const englishTab = tabsContainer.querySelector(`.language-tab[data-language="english"][data-section="${section}"]`);
+        const spanishTab = tabsContainer.querySelector(`.language-tab[data-language="spanish"][data-section="${section}"]`);
+        
+        if (englishTab) {
+            englishTab.style.display = availableLanguages.includes('english') ? 'block' : 'none';
+        }
+        if (spanishTab) {
+            spanishTab.style.display = availableLanguages.includes('spanish') ? 'block' : 'none';
+        }
+        
+        // Ensure at least one tab is active
+        const activeTab = tabsContainer.querySelector(`.language-tab[data-section="${section}"].active`);
+        if (!activeTab || (activeTab.style.display === 'none')) {
+            // Find first available language tab and make it active
+            const visibleTabs = Array.from(tabsContainer.querySelectorAll(`.language-tab[data-section="${section}"]`))
+                .filter(tab => tab.style.display !== 'none');
+            if (visibleTabs.length > 0) {
+                tabsContainer.querySelectorAll(`.language-tab[data-section="${section}"]`).forEach(tab => tab.classList.remove('active'));
+                visibleTabs[0].classList.add('active');
+            }
+        }
+    } else {
+        // Hide tabs container if only one language (or no languages)
+        tabsContainer.style.display = 'none';
     }
 }
 
@@ -2114,6 +2210,7 @@ window.viewPTGuideByLanguage = viewPTGuideByLanguage;
 window.downloadPTGuide = downloadPTGuide;
 window.renamePTGuide = renamePTGuide;
 window.deletePTGuide = deletePTGuide;
+window.switchLanguageTab = switchLanguageTab;
 
 // ==================== Patient Resources (Handouts) System ====================
 
@@ -2197,12 +2294,16 @@ async function loadHandouts() {
         });
         
         console.log('Loaded', handouts.length, 'handouts from GitHub');
-        renderHandouts();
+        updateLanguageTabs('handouts');
+        const language = getActiveLanguage('handouts');
+        renderHandouts('', language);
         return handouts;
     } catch (error) {
         console.error('Error loading handouts:', error);
         handouts = [];
-        renderHandouts();
+        updateLanguageTabs('handouts');
+        const language = getActiveLanguage('handouts');
+        renderHandouts('', language);
     }
 }
 
@@ -2224,7 +2325,7 @@ async function saveHandout(handout) {
     }
 }
 
-function renderHandouts(filter = '') {
+function renderHandouts(filter = '', language = null) {
     const container = document.getElementById('handoutsList');
     if (!container) return;
     
@@ -2233,9 +2334,26 @@ function renderHandouts(filter = '') {
         handout.displayName = getDisplayName(handout.file, handout.name, 'handout');
     });
     
+    // Check available languages to determine if we should filter
+    const availableLanguages = getAvailableLanguages('handouts');
+    const hasMultipleLanguages = availableLanguages.length > 1;
+    
+    // Get active language from tab if not provided
+    if (language === null) {
+        language = getActiveLanguage('handouts');
+    }
+    
     let filteredHandouts = [...handouts];
     
-    // Apply filter if provided
+    // Filter by language only if multiple languages are available
+    if (hasMultipleLanguages) {
+        filteredHandouts = filteredHandouts.filter(h => {
+            const handoutLanguage = parseLanguageFromFileName(h.name);
+            return handoutLanguage === language;
+        });
+    }
+    
+    // Apply search filter if provided
     if (filter) {
         const searchLower = filter.toLowerCase();
         filteredHandouts = filteredHandouts.filter(h => 
@@ -2267,7 +2385,7 @@ function renderHandouts(filter = '') {
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Resources Found</h3>
-                <p>No resources match your search criteria.</p>
+                <p>No ${getLanguageDisplayName(language)} resources match your search criteria.</p>
             </div>
         `;
         return;
@@ -2296,6 +2414,9 @@ function renderHandouts(filter = '') {
             }).join('')}
         </div>
     `;
+    
+    // Update tab visibility based on available languages
+    updateLanguageTabs('handouts');
 }
 
 function viewHandout(index) {
@@ -2392,7 +2513,8 @@ async function renameHandout(index) {
     // Re-render (preserve current search filter)
     const searchInput = document.getElementById('handoutsSearch');
     const currentFilter = searchInput ? searchInput.value : '';
-    renderHandouts(currentFilter);
+    const language = getActiveLanguage('handouts');
+    renderHandouts(currentFilter, language);
 }
 
 async function deleteHandout(index) {
@@ -2405,7 +2527,8 @@ async function initializeHandouts() {
     const searchInput = document.getElementById('handoutsSearch');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
-            renderHandouts(e.target.value);
+            const language = getActiveLanguage('handouts');
+            renderHandouts(e.target.value, language);
         });
     }
 }
@@ -2443,16 +2566,20 @@ async function loadForms() {
         });
         
         console.log('Loaded', forms.length, 'forms from GitHub');
-        renderForms();
+        updateLanguageTabs('forms');
+        const language = getActiveLanguage('forms');
+        renderForms('', language);
         return forms;
     } catch (error) {
         console.error('Error loading forms:', error);
         forms = [];
-        renderForms();
+        updateLanguageTabs('forms');
+        const language = getActiveLanguage('forms');
+        renderForms('', language);
     }
 }
 
-function renderForms(filter = '') {
+function renderForms(filter = '', language = null) {
     const container = document.getElementById('formsList');
     if (!container) return;
     
@@ -2461,9 +2588,26 @@ function renderForms(filter = '') {
         form.displayName = getDisplayName(form.file, form.name, 'form');
     });
     
+    // Check available languages to determine if we should filter
+    const availableLanguages = getAvailableLanguages('forms');
+    const hasMultipleLanguages = availableLanguages.length > 1;
+    
+    // Get active language from tab if not provided
+    if (language === null) {
+        language = getActiveLanguage('forms');
+    }
+    
     let filteredForms = [...forms];
     
-    // Apply filter if provided
+    // Filter by language only if multiple languages are available
+    if (hasMultipleLanguages) {
+        filteredForms = filteredForms.filter(f => {
+            const formLanguage = parseLanguageFromFileName(f.name);
+            return formLanguage === language;
+        });
+    }
+    
+    // Apply search filter if provided
     if (filter) {
         const searchLower = filter.toLowerCase();
         filteredForms = filteredForms.filter(f => 
@@ -2472,10 +2616,7 @@ function renderForms(filter = '') {
         );
     }
     
-    // Group forms by base name and language
-    const groupedForms = groupGuidesByLanguage(filteredForms);
-    
-    if (Object.keys(groupedForms).length === 0 && forms.length === 0) {
+    if (filteredForms.length === 0 && forms.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">📝</div>
@@ -2486,73 +2627,50 @@ function renderForms(filter = '') {
         return;
     }
     
-    if (Object.keys(groupedForms).length === 0) {
+    if (filteredForms.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Forms Found</h3>
-                <p>No forms match your search criteria.</p>
+                <p>No ${getLanguageDisplayName(language)} forms match your search criteria.</p>
             </div>
         `;
         return;
     }
     
-    // Sort base names alphabetically
-    const sortedBaseNames = Object.keys(groupedForms).sort((a, b) => 
-        a.toLowerCase().localeCompare(b.toLowerCase())
-    );
+    // Sort alphabetically by display name
+    filteredForms.sort((a, b) => {
+        const nameA = (a.displayName || a.name).toLowerCase();
+        const nameB = (b.displayName || b.name).toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
     
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${sortedBaseNames.map((baseName) => {
-                const languageVersions = groupedForms[baseName];
-                const languages = Object.keys(languageVersions);
-                const hasMultipleLanguages = languages.length > 1;
-                
-                // Get English version if available, otherwise get the first one
-                const defaultForm = languageVersions['english'] || languageVersions[languages[0]];
-                const defaultIndex = forms.findIndex(f => f.id === defaultForm.id);
-                
-                const fileIcon = getFileIcon(defaultForm.fileType);
-                const displayName = defaultForm.displayName || baseName;
-                
-                // Get non-English languages only
-                const nonEnglishLanguages = languages.filter(lang => lang !== 'english').sort();
-                const hasNonEnglishLanguages = nonEnglishLanguages.length > 0;
-                
-                // Generate language buttons for non-English languages only
-                const escapedBaseNameForButtons = baseName.replace(/'/g, "\\'");
-                const languageButton = hasNonEnglishLanguages ? nonEnglishLanguages.map(lang => {
-                    const langForm = languageVersions[lang];
-                    return `
-                        <button class="btn btn-small btn-secondary language-btn" 
-                                onclick="event.stopPropagation(); viewFormByLanguage('${escapedBaseNameForButtons}', '${lang}')"
-                                title="View ${getLanguageDisplayName(lang)} version">
-                            ${getLanguageDisplayName(lang)}
-                        </button>
-                    `;
-                }).join('') : '';
-                
-                // Always open English by default when clicking the main item (or first available if no English)
-                const defaultLanguage = languageVersions['english'] ? 'english' : languages[0];
-                const escapedBaseName = baseName.replace(/'/g, "\\'");
+            ${filteredForms.map((form) => {
+                const fileIcon = getFileIcon(form.fileType);
+                const displayName = form.displayName || form.name;
+                const actualIndex = forms.findIndex(f => f.id === form.id);
+                const escapedBaseName = getBaseName(form.name).replace(/'/g, "\\'");
                 
                 return `
-                    <div class="pathway-list-item" onclick="viewFormByLanguage('${escapedBaseName}', '${defaultLanguage}')">
+                    <div class="pathway-list-item" onclick="viewFormByLanguage('${escapedBaseName}', '${language}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
                         <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
                             <div class="pathway-list-name">${escapeHtml(displayName)}</div>
-                            ${languageButton}
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary btn-small" onclick="viewFormByLanguage('${escapedBaseName}', '${defaultLanguage}')">View</button>
-                            <button class="btn btn-secondary btn-small" onclick="downloadForm(${defaultIndex})">Download</button>
+                            <button class="btn btn-primary btn-small" onclick="viewFormByLanguage('${escapedBaseName}', '${language}')">View</button>
+                            <button class="btn btn-secondary btn-small" onclick="downloadForm(${actualIndex})">Download</button>
                         </div>
                     </div>
                 `;
             }).join('')}
         </div>
     `;
+    
+    // Update tab visibility based on available languages
+    updateLanguageTabs('forms');
 }
 
 function viewForm(index) {
@@ -2667,7 +2785,8 @@ async function renameForm(index) {
     // Re-render (preserve current search filter)
     const searchInput = document.getElementById('formsSearch');
     const currentFilter = searchInput ? searchInput.value : '';
-    renderForms(currentFilter);
+    const language = getActiveLanguage('forms');
+    renderForms(currentFilter, language);
 }
 
 async function deleteForm(index) {
@@ -2680,7 +2799,8 @@ async function initializeForms() {
     const searchInput = document.getElementById('formsSearch');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
-            renderForms(e.target.value);
+            const language = getActiveLanguage('forms');
+            renderForms(e.target.value, language);
         });
     }
 }
