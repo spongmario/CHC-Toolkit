@@ -2697,7 +2697,12 @@ function viewFormByLanguage(baseName, language) {
 function openFormWindow(form) {
     // Open document from GitHub URL
     const newWindow = window.open();
-    if (form.fileType === 'pdf') {
+    if (form.fileType === 'html') {
+        // For HTML forms (like excuse letter), open directly
+        // Provider data will be loaded from localStorage in the new window
+        // (works if same origin) or from window.opener if available
+        newWindow.location.href = form.url;
+    } else if (form.fileType === 'pdf') {
         // For PDFs, embed directly
         newWindow.document.write(`
             <html>
@@ -2811,6 +2816,15 @@ window.viewFormByLanguage = viewFormByLanguage;
 window.downloadForm = downloadForm;
 window.renameForm = renameForm;
 window.deleteForm = deleteForm;
+
+// Expose providers and BASE_PROVIDERS for excuse letter and other forms
+// Use Object.defineProperty to create a getter that always returns current providers
+Object.defineProperty(window, 'providers', {
+    get: function() { return providers; },
+    enumerable: true,
+    configurable: true
+});
+window.BASE_PROVIDERS = BASE_PROVIDERS;
 
 
 
