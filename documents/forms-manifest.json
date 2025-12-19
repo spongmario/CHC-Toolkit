@@ -1,10 +1,5 @@
 [
   {
-    "name": "Excuse Letter",
-    "file": "forms/excuse-letter.html",
-    "type": "html"
-  },
-  {
     "name": "Procedure Consent",
     "file": "forms/Procedure Consent.docx.pdf",
     "type": "pdf"
