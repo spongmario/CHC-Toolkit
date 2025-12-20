@@ -2107,6 +2107,33 @@ async function initializePT() {
     }
 }
 
+// Resource type tab switching function
+function switchResourceTypeTab(section, resourceType) {
+    // Update active tab
+    const tabs = document.querySelectorAll(`.resource-type-tab[data-section="${section}"]`);
+    tabs.forEach(tab => {
+        if (tab.dataset.resourceType === resourceType) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Re-render the appropriate section
+    const searchInputs = {
+        'pt': document.getElementById('ptSearch'),
+        'handouts': document.getElementById('handoutsSearch'),
+        'forms': document.getElementById('formsSearch')
+    };
+    
+    const searchValue = searchInputs[section] ? searchInputs[section].value : '';
+    
+    if (section === 'handouts') {
+        const language = getActiveLanguage('handouts');
+        renderHandouts(searchValue, language);
+    }
+}
+
 // Language tab switching function
 function switchLanguageTab(section, language) {
     // Update active tab
@@ -2135,6 +2162,12 @@ function switchLanguageTab(section, language) {
     } else if (section === 'forms') {
         renderForms(searchValue, language);
     }
+}
+
+// Get active resource type for a section
+function getActiveResourceType(section) {
+    const activeTab = document.querySelector(`.resource-type-tab[data-section="${section}"].active`);
+    return activeTab ? activeTab.dataset.resourceType : 'handouts';
 }
 
 // Get active language for a section
@@ -2211,6 +2244,7 @@ window.downloadPTGuide = downloadPTGuide;
 window.renamePTGuide = renamePTGuide;
 window.deletePTGuide = deletePTGuide;
 window.switchLanguageTab = switchLanguageTab;
+window.switchResourceTypeTab = switchResourceTypeTab;
 
 // ==================== Patient Resources (Handouts) System ====================
 
@@ -2334,6 +2368,9 @@ function renderHandouts(filter = '', language = null) {
         handout.displayName = getDisplayName(handout.file, handout.name, 'handout');
     });
     
+    // Get active resource type (handouts vs patient-education)
+    const resourceType = getActiveResourceType('handouts');
+    
     // Check available languages to determine if we should filter
     const availableLanguages = getAvailableLanguages('handouts');
     const hasMultipleLanguages = availableLanguages.length > 1;
@@ -2344,6 +2381,23 @@ function renderHandouts(filter = '', language = null) {
     }
     
     let filteredHandouts = [...handouts];
+    
+    // Filter by resource type
+    // Patient Education should only show hidradenitis education
+    // Handouts should exclude hidradenitis education
+    if (resourceType === 'patient-education') {
+        // Only show hidradenitis education
+        filteredHandouts = filteredHandouts.filter(h => {
+            const name = (h.displayName || h.name).toLowerCase();
+            return name.includes('hidradenitis') || name.includes('hid supp');
+        });
+    } else {
+        // Exclude hidradenitis education from handouts
+        filteredHandouts = filteredHandouts.filter(h => {
+            const name = (h.displayName || h.name).toLowerCase();
+            return !name.includes('hidradenitis') && !name.includes('hid supp');
+        });
+    }
     
     // Filter by language only if multiple languages are available
     if (hasMultipleLanguages) {
@@ -2381,11 +2435,12 @@ function renderHandouts(filter = '', language = null) {
     }
     
     if (filteredHandouts.length === 0) {
+        const resourceTypeName = resourceType === 'patient-education' ? 'patient education' : 'handouts';
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Resources Found</h3>
-                <p>No ${getLanguageDisplayName(language)} resources match your search criteria.</p>
+                <p>No ${getLanguageDisplayName(language)} ${resourceTypeName} match your search criteria.</p>
             </div>
         `;
         return;

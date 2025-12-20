@@ -338,6 +338,40 @@ body {
     min-width: 250px;
 }
 
+.resource-type-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0;
+}
+
+.resource-type-tab {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    top: 2px;
+    font-family: inherit;
+}
+
+.resource-type-tab:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.resource-type-tab.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: transparent;
+}
+
 .language-tabs {
     display: flex;
     gap: 8px;
