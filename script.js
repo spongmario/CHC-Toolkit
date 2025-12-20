@@ -827,6 +827,21 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     initializeHamburgerMenu();
     
+    // On mobile, set Clinical Pathways as the default page instead of Respiratory Illness Dashboard
+    if (window.innerWidth <= 768) {
+        // Remove active class from respiratory-panel page and nav item
+        const respiratoryPage = document.getElementById('respiratory-panel-page');
+        const respiratoryNavItem = document.querySelector('.nav-item[data-page="respiratory-panel"]');
+        if (respiratoryPage) {
+            respiratoryPage.classList.remove('active');
+        }
+        if (respiratoryNavItem) {
+            respiratoryNavItem.classList.remove('active');
+        }
+        // Set pathways as the active page on mobile
+        navigateToPage('pathways');
+    }
+    
     // Initialize Clinical Pathways
     initializePathways();
     
@@ -968,6 +983,11 @@ function initializeHamburgerMenu() {
                 sidebarOverlay.classList.remove('active');
                 hamburgerMenu.classList.remove('active');
                 document.body.style.overflow = '';
+            }
+            // On mobile, if respiratory-panel is active, switch to pathways
+            const respiratoryPage = document.getElementById('respiratory-panel-page');
+            if (respiratoryPage && respiratoryPage.classList.contains('active')) {
+                navigateToPage('pathways');
             }
         }
     });
