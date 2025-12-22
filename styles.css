@@ -1359,3 +1359,25 @@ html {
     font-weight: 600;
     color: #555;
 }
+
+/* Source Message Styles */
+.source-message {
+    transition: all 0.3s ease;
+}
+
+.source-message:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.source-message a {
+    color: #667eea;
+    text-decoration: underline;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-underline-offset: 3px;
+}
+
+.source-message a:hover {
+    color: #5568d3;
+    text-decoration-thickness: 2px;
+}
