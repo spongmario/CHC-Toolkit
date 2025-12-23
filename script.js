@@ -1264,55 +1264,55 @@ function renderPathways(filter = '') {
                 const fileIcon = getFileIcon(pathway.fileType);
                 // Find the actual index in the original pathways array
                 const actualIndex = pathways.findIndex(p => p.id === pathway.id);
-                const displayName = pathway.displayName || pathway.name;
                 const hasNested = pathway.nestedPathway !== undefined;
-                const nestedId = `nested-${actualIndex}`;
                 
-                // Build nested pathway HTML if it exists
-                let nestedHtml = '';
-                let shouldAutoExpand = false;
+                // For pathways with nested versions, clean up the display name
+                let displayName = pathway.displayName || pathway.name;
+                if (hasNested) {
+                    // Clean up name like "Pediatric UTI Algorithm - Seattle Children's" to "Pediatric UTI Seattle Children's"
+                    displayName = displayName
+                        .replace(/\s*Algorithm\s*/gi, ' ')
+                        .replace(/\s*-\s*/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+                
+                // Build action buttons
+                let actionButtons = '';
+                let itemOnClick = '';
                 if (hasNested && pathway.nestedPathway) {
-                    const nestedDisplayName = pathway.nestedPathway.displayName || pathway.nestedPathway.name;
-                    // Auto-expand if filter matches nested pathway but not main pathway
-                    if (filter) {
-                        const searchLower = filter.toLowerCase();
-                        const mainMatches = (pathway.displayName || pathway.name).toLowerCase().includes(searchLower);
-                        const nestedMatches = nestedDisplayName.toLowerCase().includes(searchLower);
-                        shouldAutoExpand = nestedMatches && !mainMatches;
-                    }
-                    const escapedUrl = escapeJsString(pathway.nestedPathway.url);
-                    const escapedName = escapeJsString(nestedDisplayName);
-                    nestedHtml = `
-                        <div class="nested-pathway-item" id="${nestedId}" style="display:${shouldAutoExpand ? 'block' : 'none'};">
-                            <div class="pathway-list-item nested" onclick="event.stopPropagation(); viewNestedPathway('${escapedUrl}', '${escapedName}');">
-                                <div class="pathway-list-icon">${getFileIcon(pathway.nestedPathway.fileType)}</div>
-                                <div class="pathway-list-info">
-                                    <div class="pathway-list-name" style="padding-left:20px;opacity:0.9;">${escapeHtml(nestedDisplayName)}</div>
-                                </div>
-                                <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewNestedPathway('${escapedUrl}', '${escapedName}');">View</button>
-                                    <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); window.open('${escapedUrl}', '_blank');">Download</button>
-                                </div>
-                            </div>
-                        </div>
+                    // Show Simple and Detailed buttons instead of View
+                    const simpleUrl = escapeJsString(pathway.url);
+                    const simpleName = escapeJsString(displayName);
+                    const detailedUrl = escapeJsString(pathway.nestedPathway.url);
+                    const detailedName = escapeJsString(pathway.nestedPathway.displayName || pathway.nestedPathway.name);
+                    
+                    // Clicking the name opens the simple file
+                    itemOnClick = `onclick="viewPathwayByUrl('${simpleUrl}', '${simpleName}');"`;
+                    
+                    actionButtons = `
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewPathwayByUrl('${simpleUrl}', '${simpleName}');">Simple</button>
+                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewPathwayByUrl('${detailedUrl}', '${detailedName}');">Detailed</button>
+                        <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); downloadPathway(${actualIndex})">Download</button>
+                    `;
+                } else {
+                    // Regular pathway with View and Download
+                    itemOnClick = `onclick="viewPathway(${actualIndex})"`;
+                    actionButtons = `
+                        <button class="btn btn-primary btn-small" onclick="viewPathway(${actualIndex})">View</button>
+                        <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
                     `;
                 }
                 
-                const expandIcon = hasNested ? `<span class="expand-icon" style="margin-right:8px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); toggleNestedPathway('${nestedId}', this);">${shouldAutoExpand ? '▼' : '▶'}</span>` : '';
-                
                 return `
-                    <div class="pathway-item-wrapper">
-                        <div class="pathway-list-item" onclick="viewPathway(${actualIndex})">
-                            <div class="pathway-list-icon">${fileIcon}</div>
-                            <div class="pathway-list-info" style="flex:1;">
-                                <div class="pathway-list-name">${expandIcon}${escapeHtml(displayName)}</div>
-                            </div>
-                            <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                                <button class="btn btn-primary btn-small" onclick="viewPathway(${actualIndex})">View</button>
-                                <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
-                            </div>
+                    <div class="pathway-list-item" ${itemOnClick}>
+                        <div class="pathway-list-icon">${fileIcon}</div>
+                        <div class="pathway-list-info" style="flex:1;">
+                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
                         </div>
-                        ${nestedHtml}
+                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                            ${actionButtons}
+                        </div>
                     </div>
                 `;
             }).join('')}
@@ -1500,6 +1500,10 @@ function toggleNestedPathway(nestedId, iconElement) {
 }
 
 function viewNestedPathway(url, name) {
+    viewPathwayByUrl(url, name);
+}
+
+function viewPathwayByUrl(url, name) {
     const newWindow = window.open();
     newWindow.document.write(`
         <html>

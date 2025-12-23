@@ -469,7 +469,7 @@ body {
 .pathway-list-item.nested {
     background-color: #f8f9fa;
     border-left: 3px solid #adb5bd;
-    padding-left: 40px;
+    padding-left: 60px;
 }
 
 .pathway-list-item.nested:hover {
@@ -478,11 +478,32 @@ body {
     transform: translateX(2px);
 }
 
+.expand-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.expand-icon-container:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    transform: scale(1.1);
+}
+
 .expand-icon {
     display: inline-block;
     transition: transform 0.2s ease;
     color: #667eea;
-    font-size: 0.85em;
+    font-size: 1.1em;
+    font-weight: bold;
+    user-select: none;
 }
 
 @keyframes slideDown {
