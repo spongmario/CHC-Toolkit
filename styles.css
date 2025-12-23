@@ -455,6 +455,46 @@ body {
     padding-left: 21px;
 }
 
+.pathway-item-wrapper {
+    position: relative;
+}
+
+.nested-pathway-item {
+    background-color: #f8f9fa;
+    border-left: 3px solid #667eea;
+    animation: slideDown 0.2s ease;
+}
+
+.pathway-list-item.nested {
+    background-color: #f8f9fa;
+    border-left: 3px solid #adb5bd;
+    padding-left: 40px;
+}
+
+.pathway-list-item.nested:hover {
+    background-color: #e9ecef;
+    border-left-color: #667eea;
+    transform: translateX(2px);
+}
+
+.expand-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    color: #667eea;
+    font-size: 0.85em;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+    }
+}
+
 .pathway-list-icon {
     font-size: 2em;
     color: #667eea;

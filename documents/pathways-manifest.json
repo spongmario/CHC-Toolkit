@@ -18,6 +18,16 @@
     "name": "Diabetes Walk-In",
     "file": "pathways/Diabetes Walk-In.pdf",
     "type": "pdf"
+  },
+  {
+    "name": "Pediatric UTI Algorithm - Seattle Children's",
+    "file": "pathways/UTI-Algorithm-Simple.pdf",
+    "type": "pdf",
+    "nestedPathway": {
+      "name": "Pediatric UTI Pathway (Detailed) - Seattle Children's",
+      "file": "pathways/UTI-Pathway-Detailed.pdf",
+      "type": "pdf"
+    }
   }
 ]
 

@@ -1093,14 +1093,28 @@ async function loadPathways() {
         const manifest = await response.json();
         await loadCustomDisplayNames(); // Load custom names from GitHub
         pathways = manifest.map((item, index) => {
-            return {
+            const pathway = {
                 id: index,
                 file: item.file,
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'pathway'),
                 fileType: item.type || getFileExtension(item.name),
-                url: `${GITHUB_BASE_URL}/documents/${item.file}`
+                url: `${GITHUB_BASE_URL}/documents/${item.file}`,
+                relatedPathway: item.relatedPathway || null
             };
+            
+            // Handle nested pathway
+            if (item.nestedPathway) {
+                pathway.nestedPathway = {
+                    file: item.nestedPathway.file,
+                    name: item.nestedPathway.name,
+                    displayName: getDisplayName(item.nestedPathway.file, item.nestedPathway.name, 'pathway'),
+                    fileType: item.nestedPathway.type || getFileExtension(item.nestedPathway.name),
+                    url: `${GITHUB_BASE_URL}/documents/${item.nestedPathway.file}`
+                };
+            }
+            
+            return pathway;
         });
         
         console.log('Loaded', pathways.length, 'pathways from GitHub');
@@ -1185,6 +1199,9 @@ function renderPathways(filter = '') {
     // Recalculate display names to ensure they're up to date
     pathways.forEach(pathway => {
         pathway.displayName = getDisplayName(pathway.file, pathway.name, 'pathway');
+        if (pathway.nestedPathway) {
+            pathway.nestedPathway.displayName = getDisplayName(pathway.nestedPathway.file, pathway.nestedPathway.name, 'pathway');
+        }
     });
     
     let filteredPathways = [...pathways]; // Create a copy to avoid mutating original
@@ -1192,11 +1209,20 @@ function renderPathways(filter = '') {
     // Apply filter if provided
     if (filter) {
         const searchLower = filter.toLowerCase();
-        filteredPathways = filteredPathways.filter(p => 
-            (p.displayName || p.name).toLowerCase().includes(searchLower) ||
-            p.name.toLowerCase().includes(searchLower) ||
-            (p.description && p.description.toLowerCase().includes(searchLower))
-        );
+        filteredPathways = filteredPathways.filter(p => {
+            const matchesMain = (p.displayName || p.name).toLowerCase().includes(searchLower) ||
+                p.name.toLowerCase().includes(searchLower) ||
+                (p.description && p.description.toLowerCase().includes(searchLower));
+            
+            // Also check nested pathway if it exists
+            if (p.nestedPathway) {
+                const matchesNested = (p.nestedPathway.displayName || p.nestedPathway.name).toLowerCase().includes(searchLower) ||
+                    p.nestedPathway.name.toLowerCase().includes(searchLower);
+                return matchesMain || matchesNested;
+            }
+            
+            return matchesMain;
+        });
     }
     
     // Sort alphabetically by display name
@@ -1239,16 +1265,54 @@ function renderPathways(filter = '') {
                 // Find the actual index in the original pathways array
                 const actualIndex = pathways.findIndex(p => p.id === pathway.id);
                 const displayName = pathway.displayName || pathway.name;
+                const hasNested = pathway.nestedPathway !== undefined;
+                const nestedId = `nested-${actualIndex}`;
+                
+                // Build nested pathway HTML if it exists
+                let nestedHtml = '';
+                let shouldAutoExpand = false;
+                if (hasNested && pathway.nestedPathway) {
+                    const nestedDisplayName = pathway.nestedPathway.displayName || pathway.nestedPathway.name;
+                    // Auto-expand if filter matches nested pathway but not main pathway
+                    if (filter) {
+                        const searchLower = filter.toLowerCase();
+                        const mainMatches = (pathway.displayName || pathway.name).toLowerCase().includes(searchLower);
+                        const nestedMatches = nestedDisplayName.toLowerCase().includes(searchLower);
+                        shouldAutoExpand = nestedMatches && !mainMatches;
+                    }
+                    const escapedUrl = escapeJsString(pathway.nestedPathway.url);
+                    const escapedName = escapeJsString(nestedDisplayName);
+                    nestedHtml = `
+                        <div class="nested-pathway-item" id="${nestedId}" style="display:${shouldAutoExpand ? 'block' : 'none'};">
+                            <div class="pathway-list-item nested" onclick="event.stopPropagation(); viewNestedPathway('${escapedUrl}', '${escapedName}');">
+                                <div class="pathway-list-icon">${getFileIcon(pathway.nestedPathway.fileType)}</div>
+                                <div class="pathway-list-info">
+                                    <div class="pathway-list-name" style="padding-left:20px;opacity:0.9;">${escapeHtml(nestedDisplayName)}</div>
+                                </div>
+                                <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewNestedPathway('${escapedUrl}', '${escapedName}');">View</button>
+                                    <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); window.open('${escapedUrl}', '_blank');">Download</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const expandIcon = hasNested ? `<span class="expand-icon" style="margin-right:8px;cursor:pointer;user-select:none;" onclick="event.stopPropagation(); toggleNestedPathway('${nestedId}', this);">${shouldAutoExpand ? '▼' : '▶'}</span>` : '';
+                
                 return `
-                    <div class="pathway-list-item" onclick="viewPathway(${actualIndex})">
-                        <div class="pathway-list-icon">${fileIcon}</div>
-                        <div class="pathway-list-info">
-                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                    <div class="pathway-item-wrapper">
+                        <div class="pathway-list-item" onclick="viewPathway(${actualIndex})">
+                            <div class="pathway-list-icon">${fileIcon}</div>
+                            <div class="pathway-list-info" style="flex:1;">
+                                <div class="pathway-list-name">${expandIcon}${escapeHtml(displayName)}</div>
+                            </div>
+                            <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                                <button class="btn btn-primary btn-small" onclick="viewPathway(${actualIndex})">View</button>
+                                <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
+                            </div>
                         </div>
-                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary btn-small" onclick="viewPathway(${actualIndex})">View</button>
-                            <button class="btn btn-secondary btn-small" onclick="downloadPathway(${actualIndex})">Download</button>
-                        </div>
+                        ${nestedHtml}
                     </div>
                 `;
             }).join('')}
@@ -1273,6 +1337,11 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function escapeJsString(str) {
+    // Escape for use in single-quoted JavaScript strings
+    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 }
 
 async function handleFileUpload(files) {
@@ -1353,15 +1422,41 @@ function viewPathway(index) {
     const pathway = pathways[index];
     if (!pathway) return;
     
+    // Find related pathway if it exists
+    let relatedPathwayIndex = -1;
+    let relatedPathwayUrl = null;
+    if (pathway.relatedPathway) {
+        relatedPathwayIndex = pathways.findIndex(p => p.file === pathway.relatedPathway);
+        if (relatedPathwayIndex !== -1) {
+            relatedPathwayUrl = pathways[relatedPathwayIndex].url;
+        }
+    }
+    
     // Open document from GitHub URL
     const newWindow = window.open();
     if (pathway.fileType === 'pdf') {
-        // For PDFs, embed directly
+        // For PDFs, embed directly with optional related pathway banner
+        let relatedBanner = '';
+        if (relatedPathwayUrl && relatedPathwayIndex !== -1) {
+            const relatedName = pathways[relatedPathwayIndex].displayName || pathways[relatedPathwayIndex].name;
+            relatedBanner = `
+                <div style="position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;padding:12px 20px;z-index:10000;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div style="flex:1;min-width:200px;">
+                        <strong style="font-size:0.9em;">📋 Related Pathway Available:</strong>
+                        <span style="font-size:0.85em;margin-left:8px;">${escapeHtml(relatedName)}</span>
+                    </div>
+                    <button onclick="window.open('${relatedPathwayUrl}', '_blank');" style="padding:8px 16px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:6px;cursor:pointer;font-weight:600;font-size:0.9em;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)';" onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                        View Detailed Pathway →
+                    </button>
+                </div>
+            `;
+        }
         newWindow.document.write(`
             <html>
                 <head><title>${escapeHtml(pathway.name)}</title></head>
                 <body style="margin:0;padding:0;">
-                    <embed src="${pathway.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
+                    ${relatedBanner}
+                    <embed src="${pathway.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:${relatedBanner ? '50px' : '0'};left:0;width:100%;height:${relatedBanner ? 'calc(100vh - 50px)' : '100vh'};" />
                 </body>
             </html>
         `);
@@ -1393,6 +1488,27 @@ function downloadPathway(index) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+function toggleNestedPathway(nestedId, iconElement) {
+    const nestedElement = document.getElementById(nestedId);
+    if (!nestedElement) return;
+    
+    const isExpanded = nestedElement.style.display !== 'none';
+    nestedElement.style.display = isExpanded ? 'none' : 'block';
+    iconElement.textContent = isExpanded ? '▶' : '▼';
+}
+
+function viewNestedPathway(url, name) {
+    const newWindow = window.open();
+    newWindow.document.write(`
+        <html>
+            <head><title>${escapeHtml(name)}</title></head>
+            <body style="margin:0;padding:0;">
+                <embed src="${url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
+            </body>
+        </html>
+    `);
 }
 
 async function renamePathway(index) {
