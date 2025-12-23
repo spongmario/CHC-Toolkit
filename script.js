@@ -2266,6 +2266,33 @@ window.deletePTGuide = deletePTGuide;
 window.switchLanguageTab = switchLanguageTab;
 window.switchResourceTypeTab = switchResourceTypeTab;
 
+// ==================== Vaccine Schedule Tab Switching ====================
+function switchVaccineScheduleTab(scheduleType) {
+    // Update active tab
+    const tabs = document.querySelectorAll(`.language-tab[data-section="vaccine-schedule"]`);
+    tabs.forEach(tab => {
+        if (tab.dataset.language === scheduleType) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Show/hide sections
+    const adultSection = document.getElementById('adult-vaccine-schedule-section');
+    const pediatricSection = document.getElementById('pediatric-vaccine-schedule-section');
+    
+    if (scheduleType === 'adult') {
+        if (adultSection) adultSection.style.display = 'block';
+        if (pediatricSection) pediatricSection.style.display = 'none';
+    } else if (scheduleType === 'pediatric') {
+        if (adultSection) adultSection.style.display = 'none';
+        if (pediatricSection) pediatricSection.style.display = 'block';
+    }
+}
+
+window.switchVaccineScheduleTab = switchVaccineScheduleTab;
+
 // ==================== Patient Resources (Handouts) System ====================
 
 const HANDOUTS_STORE_NAME = 'handouts';
