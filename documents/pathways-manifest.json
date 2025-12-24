@@ -28,6 +28,11 @@
       "file": "pathways/UTI-Pathway-Detailed.pdf",
       "type": "pdf"
     }
+  },
+  {
+    "name": "Imaging Ordering Guide",
+    "file": "pathways/IHS_CPT-Code-Book_2022.pdf",
+    "type": "pdf"
   }
 ]
 
