@@ -23,6 +23,11 @@
     "name": "Snohomish County STI Clinic",
     "file": "handouts/Sno DOH STI handout.pdf",
     "type": "pdf"
+  },
+  {
+    "name": "Bladder Irritants",
+    "file": "handouts/Bladder Irritants.pdf",
+    "type": "pdf"
   }
 ]
 
