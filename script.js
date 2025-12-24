@@ -2582,19 +2582,19 @@ function renderHandouts(filter = '', language = null) {
     let filteredHandouts = [...handouts];
     
     // Filter by resource type
-    // Patient Education should show hidradenitis education and bladder irritants
-    // Handouts should exclude patient education items
+    // Patient Education should only show hidradenitis education
+    // Handouts should exclude hidradenitis education
     if (resourceType === 'patient-education') {
-        // Show hidradenitis education and bladder irritants
+        // Only show hidradenitis education
         filteredHandouts = filteredHandouts.filter(h => {
             const name = (h.displayName || h.name).toLowerCase();
-            return name.includes('hidradenitis') || name.includes('hid supp') || name.includes('bladder irritants');
+            return name.includes('hidradenitis') || name.includes('hid supp');
         });
     } else {
-        // Exclude patient education items from handouts
+        // Exclude hidradenitis education from handouts
         filteredHandouts = filteredHandouts.filter(h => {
             const name = (h.displayName || h.name).toLowerCase();
-            return !name.includes('hidradenitis') && !name.includes('hid supp') && !name.includes('bladder irritants');
+            return !name.includes('hidradenitis') && !name.includes('hid supp');
         });
     }
     
