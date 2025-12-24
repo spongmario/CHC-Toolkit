@@ -2,27 +2,32 @@
   {
     "name": "MDM.pdf",
     "file": "pathways/MDM.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "category": "guide"
   },
   {
     "name": "Pregnancy WI.docx.pdf",
     "file": "pathways/Pregnancy WI.docx.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "category": "pathway"
   },
   {
     "name": "Measles Protocol March 2024.docx.pdf",
     "file": "pathways/Measles Protocol March 2024.docx.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "category": "pathway"
   },
   {
     "name": "Diabetes Walk-In",
     "file": "pathways/Diabetes Walk-In.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "category": "pathway"
   },
   {
     "name": "Pediatric UTI Algorithm - Seattle Children's",
     "file": "pathways/UTI-Algorithm-Simple.pdf",
     "type": "pdf",
+    "category": "pathway",
     "nestedPathway": {
       "name": "Pediatric UTI Pathway (Detailed) - Seattle Children's",
       "file": "pathways/UTI-Pathway-Detailed.pdf",
@@ -32,7 +37,8 @@
   {
     "name": "Imaging Ordering Guide",
     "file": "pathways/IHS_CPT-Code-Book_2022.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "category": "guide"
   }
 ]
 

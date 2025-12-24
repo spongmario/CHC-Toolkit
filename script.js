@@ -1100,7 +1100,8 @@ async function loadPathways() {
                 displayName: getDisplayName(item.file, item.name, 'pathway'),
                 fileType: item.type || getFileExtension(item.name),
                 url: `${GITHUB_BASE_URL}/documents/${item.file}`,
-                relatedPathway: item.relatedPathway || null
+                relatedPathway: item.relatedPathway || null,
+                category: item.category || 'pathway' // Default to 'pathway' for backward compatibility
             };
             
             // Handle nested pathway
@@ -1192,9 +1193,15 @@ async function deletePathwayFromDB(id) {
     }
 }
 
-function renderPathways(filter = '') {
+function renderPathways(filter = '', category = null) {
     const container = document.getElementById('pathwaysList');
     if (!container) return;
+    
+    // Get active category if not provided
+    if (category === null) {
+        const activeTab = document.querySelector(`.language-tab[data-section="pathways"].active`);
+        category = activeTab ? activeTab.dataset.category : 'pathway';
+    }
     
     // Recalculate display names to ensure they're up to date
     pathways.forEach(pathway => {
@@ -1205,6 +1212,11 @@ function renderPathways(filter = '') {
     });
     
     let filteredPathways = [...pathways]; // Create a copy to avoid mutating original
+    
+    // Filter by category
+    if (category) {
+        filteredPathways = filteredPathways.filter(p => p.category === category);
+    }
     
     // Apply filter if provided
     if (filter) {
@@ -1247,11 +1259,12 @@ function renderPathways(filter = '') {
     }
     
     if (filteredPathways.length === 0) {
+        const categoryLabel = category === 'guide' ? 'Guides' : 'Clinical Pathways';
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
-                <h3>No Pathways Found</h3>
-                <p>No pathways match your search criteria.</p>
+                <h3>No ${categoryLabel} Found</h3>
+                <p>No ${categoryLabel.toLowerCase()} match your search criteria.</p>
             </div>
         `;
         return;
@@ -1583,11 +1596,30 @@ async function initializePathways() {
     }
 }
 
+// Switch pathway category tab
+function switchPathwayCategoryTab(category) {
+    // Update active tab
+    const tabs = document.querySelectorAll(`.language-tab[data-section="pathways"]`);
+    tabs.forEach(tab => {
+        if (tab.dataset.category === category) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Re-render pathways with the selected category
+    const searchInput = document.getElementById('pathwaySearch');
+    const currentFilter = searchInput ? searchInput.value : '';
+    renderPathways(currentFilter, category);
+}
+
 // Make functions available globally
 window.viewPathway = viewPathway;
 window.downloadPathway = downloadPathway;
 window.renamePathway = renamePathway;
 window.deletePathway = deletePathway;
+window.switchPathwayCategoryTab = switchPathwayCategoryTab;
 
 // ==================== Physical Therapy System ====================
 
