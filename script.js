@@ -1200,7 +1200,7 @@ function renderPathways(filter = '', category = null) {
     // Get active category if not provided
     if (category === null) {
         const activeTab = document.querySelector(`.language-tab[data-section="pathways"].active`);
-        category = activeTab ? activeTab.dataset.category : 'pathway';
+        category = activeTab ? activeTab.dataset.category : 'guide';
     }
     
     // Recalculate display names to ensure they're up to date

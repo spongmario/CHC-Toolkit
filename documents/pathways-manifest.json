@@ -39,6 +39,12 @@
     "file": "pathways/IHS_CPT-Code-Book_2022.pdf",
     "type": "pdf",
     "category": "guide"
+  },
+  {
+    "name": "Pediatric Tylenol/Motrin Dosing",
+    "file": "pathways/Tylenol-Motrin-Benadryl-dosing-chart.pdf",
+    "type": "pdf",
+    "category": "guide"
   }
 ]
 
