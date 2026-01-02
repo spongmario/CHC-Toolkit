@@ -3435,6 +3435,38 @@ function initializeDosingCalculator() {
         resultBox.style.display = 'block';
     }
     
+    // Update placeholder and unit display based on selected unit
+    function updateWeightPlaceholder() {
+        const weightUnit = weightUnitKg && weightUnitKg.checked ? 'kg' : 'lbs';
+        if (weightInput) {
+            weightInput.placeholder = `Enter weight`;
+        }
+        const unitDisplay = document.getElementById('weightUnitDisplay');
+        if (unitDisplay) {
+            unitDisplay.textContent = weightUnit;
+        }
+    }
+    
+    // Track previous unit for conversion
+    let previousUnit = weightUnitKg && weightUnitKg.checked ? 'kg' : 'lbs';
+    
+    // Convert weight when switching units
+    function convertWeightOnUnitChange(newUnit) {
+        const currentValue = parseFloat(weightInput.value);
+        if (!isNaN(currentValue) && currentValue > 0 && previousUnit !== newUnit) {
+            if (previousUnit === 'lbs' && newUnit === 'kg') {
+                // Converting from lbs to kg
+                const convertedValue = currentValue / 2.20462;
+                weightInput.value = convertedValue.toFixed(1);
+            } else if (previousUnit === 'kg' && newUnit === 'lbs') {
+                // Converting from kg to lbs
+                const convertedValue = currentValue * 2.20462;
+                weightInput.value = convertedValue.toFixed(1);
+            }
+        }
+        previousUnit = newUnit;
+    }
+    
     // Update button styles when radio buttons change
     function updateUnitButtonStyles() {
         const unitLabels = document.querySelectorAll('.unit-radio-label');
@@ -3454,16 +3486,23 @@ function initializeDosingCalculator() {
     }
     if (weightUnitKg) {
         weightUnitKg.addEventListener('change', () => {
+            convertWeightOnUnitChange('kg');
             updateUnitButtonStyles();
+            updateWeightPlaceholder();
             calculateDose();
         });
     }
     if (weightUnitLbs) {
         weightUnitLbs.addEventListener('change', () => {
+            convertWeightOnUnitChange('lbs');
             updateUnitButtonStyles();
+            updateWeightPlaceholder();
             calculateDose();
         });
     }
+    
+    // Initialize placeholder
+    updateWeightPlaceholder();
     if (dosePerKgInput) {
         dosePerKgInput.addEventListener('input', calculateDose);
     }

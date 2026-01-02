@@ -352,14 +352,17 @@
                             <div class="form-group dosing-form-group">
                                 <label for="patientWeight" class="dosing-label">Patient Weight</label>
                                 <div class="weight-input-container">
-                                    <input type="number" id="patientWeight" min="0" step="0.1" placeholder="Enter weight" class="dosing-input">
+                                    <div class="weight-input-wrapper">
+                                        <input type="number" id="patientWeight" min="0" step="0.1" placeholder="Enter weight" class="dosing-input">
+                                        <span class="weight-unit-display" id="weightUnitDisplay">kg</span>
+                                    </div>
                                     <div class="weight-unit-selector">
                                         <label class="unit-radio-label">
-                                            <input type="radio" name="weightUnit" id="weightUnitKg" value="kg" checked>
+                                            <input type="radio" name="weightUnit" id="weightUnitKg" value="kg" checked tabindex="-1">
                                             <span class="unit-button-text">kg</span>
                                         </label>
                                         <label class="unit-radio-label">
-                                            <input type="radio" name="weightUnit" id="weightUnitLbs" value="lbs">
+                                            <input type="radio" name="weightUnit" id="weightUnitLbs" value="lbs" tabindex="-1">
                                             <span class="unit-button-text">lbs</span>
                                         </label>
                                     </div>
