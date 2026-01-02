@@ -3188,15 +3188,105 @@ function initializeDosingCalculator() {
         return null;
     }
     
+    function parseDoseRange(inputValue) {
+        if (!inputValue || inputValue.trim() === '') return null;
+        
+        const value = inputValue.trim();
+        
+        // Check if it's a range (contains dash, hyphen, or "to")
+        const rangeMatch = value.match(/(\d+\.?\d*)\s*[-–—to]\s*(\d+\.?\d*)/i);
+        if (rangeMatch) {
+            const min = parseFloat(rangeMatch[1]);
+            const max = parseFloat(rangeMatch[2]);
+            if (!isNaN(min) && !isNaN(max) && min > 0 && max > 0 && min <= max) {
+                return { min, max, isRange: true };
+            }
+        }
+        
+        // Try to parse as single value
+        const singleValue = parseFloat(value);
+        if (!isNaN(singleValue) && singleValue > 0) {
+            return { min: singleValue, max: singleValue, isRange: false };
+        }
+        
+        return null;
+    }
+    
+    function calculateOptimizedDose(minMg, maxMg, concentration, frequencyHours) {
+        // Calculate middle of range
+        const middleMg = (minMg + maxMg) / 2;
+        
+        if (concentration && concentration > 0) {
+            // For liquid: prioritize whole numbers, then 0.5 increments
+            const minMl = minMg / concentration;
+            const maxMl = maxMg / concentration;
+            const middleMl = middleMg / concentration;
+            
+            // First, try to find a whole number near the middle that's within range
+            const wholeNumberMl = Math.round(middleMl);
+            const wholeNumberMg = wholeNumberMl * concentration;
+            
+            if (wholeNumberMg >= minMg && wholeNumberMg <= maxMg) {
+                // Whole number works! Use it
+                return { ml: wholeNumberMl, mg: wholeNumberMg };
+            }
+            
+            // If whole number doesn't work, try the next closest whole numbers
+            const lowerWhole = Math.floor(middleMl);
+            const upperWhole = Math.ceil(middleMl);
+            
+            // Check if lower whole number is in range
+            const lowerWholeMg = lowerWhole * concentration;
+            if (lowerWholeMg >= minMg && lowerWholeMg <= maxMg) {
+                return { ml: lowerWhole, mg: lowerWholeMg };
+            }
+            
+            // Check if upper whole number is in range
+            const upperWholeMg = upperWhole * concentration;
+            if (upperWholeMg >= minMg && upperWholeMg <= maxMg) {
+                return { ml: upperWhole, mg: upperWholeMg };
+            }
+            
+            // No whole number works, fall back to 0.5 increments
+            const roundedMl = Math.round(middleMl * 2) / 2; // Round to nearest 0.5
+            const optimizedMg = roundedMl * concentration;
+            
+            // Ensure it's within range
+            if (optimizedMg < minMg) {
+                // Round up to nearest 0.5 that's at least min
+                const roundedMinMl = Math.ceil(minMl * 2) / 2;
+                return { ml: roundedMinMl, mg: roundedMinMl * concentration };
+            } else if (optimizedMg > maxMg) {
+                // Round down to nearest 0.5 that's at most max
+                const roundedMaxMl = Math.floor(maxMl * 2) / 2;
+                return { ml: roundedMaxMl, mg: roundedMaxMl * concentration };
+            } else {
+                return { ml: roundedMl, mg: optimizedMg };
+            }
+        } else {
+            // For mg: round to nearest whole number
+            const roundedMg = Math.round(middleMg);
+            
+            // Ensure it's within range
+            if (roundedMg < minMg) {
+                return { ml: null, mg: Math.ceil(minMg) };
+            } else if (roundedMg > maxMg) {
+                return { ml: null, mg: Math.floor(maxMg) };
+            } else {
+                return { ml: null, mg: roundedMg };
+            }
+        }
+    }
+    
     function calculateDose() {
         const weightInputValue = parseFloat(weightInput.value);
         const weightUnit = weightUnitKg && weightUnitKg.checked ? 'kg' : 'lbs';
-        const dosePerKgPerDay = parseFloat(dosePerKgInput.value);
+        const doseRange = parseDoseRange(dosePerKgInput.value);
         const concentration = parseConcentration(concentrationInput.value);
         const frequencyHours = frequencyInput ? parseFloat(frequencyInput.value) : null;
         
         // Only require weight and dose per kg (concentration is optional)
-        if (!weightInputValue || !dosePerKgPerDay || weightInputValue <= 0 || dosePerKgPerDay <= 0) {
+        if (!weightInputValue || !doseRange || weightInputValue <= 0 || doseRange.min <= 0) {
             resultBox.style.display = 'none';
             return;
         }
@@ -3204,17 +3294,31 @@ function initializeDosingCalculator() {
         // Convert weight to kg if needed (1 kg = 2.20462 lbs)
         const weightInKg = weightUnit === 'lbs' ? weightInputValue / 2.20462 : weightInputValue;
         
-        // Calculate daily total dose in mg (dosePerKgPerDay is already mg/kg/day)
-        const dailyTotalMg = weightInKg * dosePerKgPerDay;
+        // Calculate daily total doses in mg for min, max, and optimized
+        const dailyTotalMinMg = weightInKg * doseRange.min;
+        const dailyTotalMaxMg = weightInKg * doseRange.max;
         
         // Calculate per dose if frequency is provided
-        let perDoseMg = null;
-        let perDoseMl = null;
+        let perDoseMinMg = null;
+        let perDoseMaxMg = null;
+        let perDoseMinMl = null;
+        let perDoseMaxMl = null;
+        let optimizedDose = null;
+        
         if (frequencyHours && frequencyHours > 0) {
             const dosesPerDay = 24 / frequencyHours;
-            perDoseMg = dailyTotalMg / dosesPerDay;
+            perDoseMinMg = dailyTotalMinMg / dosesPerDay;
+            perDoseMaxMg = dailyTotalMaxMg / dosesPerDay;
+            
             if (concentration && concentration > 0) {
-                perDoseMl = perDoseMg / concentration;
+                perDoseMinMl = perDoseMinMg / concentration;
+                perDoseMaxMl = perDoseMaxMg / concentration;
+                
+                // Calculate optimized dose
+                optimizedDose = calculateOptimizedDose(perDoseMinMg, perDoseMaxMg, concentration, frequencyHours);
+            } else {
+                // Calculate optimized dose for mg only
+                optimizedDose = calculateOptimizedDose(perDoseMinMg, perDoseMaxMg, null, frequencyHours);
             }
         }
         
@@ -3222,29 +3326,107 @@ function initializeDosingCalculator() {
         let resultText = '';
         let breakdownHTML = '';
         
-        if (frequencyHours && perDoseMg !== null) {
-            // Show per dose with frequency
+        if (frequencyHours && perDoseMinMg !== null) {
             const frequencyText = getPrescriptionFrequency(frequencyHours);
             
-            // Prefer mL if available, otherwise show mg
-            if (perDoseMl !== null) {
-                resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
-                // Add mg information for liquid
-                breakdownHTML = `
-                    <div class="breakdown-item">${Math.round(perDoseMg)} mg every ${frequencyHours} hours</div>
-                    <div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>
-                `;
+            if (doseRange.isRange) {
+                // Show range with optimized dose
+                if (perDoseMinMl !== null) {
+                    // Liquid with range
+                    if (optimizedDose && optimizedDose.ml !== null) {
+                        resultText = `${optimizedDose.ml.toFixed(1)} mL ${frequencyText}`;
+                        breakdownHTML = `
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
+                            <div class="breakdown-item">${optimizedDose.ml.toFixed(1)} mL (${Math.round(optimizedDose.mg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
+                            <div class="breakdown-item">Min: ${perDoseMinMl.toFixed(1)} mL (${Math.round(perDoseMinMg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 8px;">Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                        `;
+                    } else {
+                        resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
+                        breakdownHTML = `
+                            <div class="breakdown-item">${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>
+                        `;
+                    }
+                } else {
+                    // mg only with range
+                    if (optimizedDose && optimizedDose.mg !== null) {
+                        resultText = `${optimizedDose.mg} mg ${frequencyText}`;
+                        breakdownHTML = `
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
+                            <div class="breakdown-item">${optimizedDose.mg} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
+                            <div class="breakdown-item">Min: ${Math.round(perDoseMinMg)} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 8px;">Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                        `;
+                    } else {
+                        resultText = `${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg ${frequencyText}`;
+                        breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
+                    }
+                }
             } else {
-                resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
+                // Single value (not a range)
+                const perDoseMg = perDoseMinMg;
+                const perDoseMl = perDoseMinMl;
+                
+                if (perDoseMl !== null) {
+                    resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
+                    breakdownHTML = `
+                        <div class="breakdown-item">${Math.round(perDoseMg)} mg every ${frequencyHours} hours</div>
+                        <div class="breakdown-item">${Math.round(dailyTotalMinMg)} mg per day</div>
+                    `;
+                } else {
+                    resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
+                }
             }
         } else {
-            // Show daily total
-            if (concentration && concentration > 0) {
-                const dailyTotalMl = dailyTotalMg / concentration;
-                resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
-                breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>`;
+            // Show daily total (no frequency)
+            if (doseRange.isRange) {
+                if (concentration && concentration > 0) {
+                    const dailyTotalMinMl = dailyTotalMinMg / concentration;
+                    const dailyTotalMaxMl = dailyTotalMaxMg / concentration;
+                    const optimizedDaily = calculateOptimizedDose(dailyTotalMinMg, dailyTotalMaxMg, concentration, null);
+                    
+                    if (optimizedDaily && optimizedDaily.ml !== null) {
+                        resultText = `${optimizedDaily.ml.toFixed(1)} mL once daily`;
+                        breakdownHTML = `
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
+                            <div class="breakdown-item">${optimizedDaily.ml.toFixed(1)} mL (${Math.round(optimizedDaily.mg)} mg) once daily</div>
+                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
+                            <div class="breakdown-item">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
+                            <div class="breakdown-item">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
+                        `;
+                    } else {
+                        resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
+                        breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
+                    }
+                } else {
+                    const optimizedDaily = calculateOptimizedDose(dailyTotalMinMg, dailyTotalMaxMg, null, null);
+                    if (optimizedDaily && optimizedDaily.mg !== null) {
+                        resultText = `${optimizedDaily.mg} mg once daily`;
+                        breakdownHTML = `
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
+                            <div class="breakdown-item">${optimizedDaily.mg} mg once daily</div>
+                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
+                            <div class="breakdown-item">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
+                            <div class="breakdown-item">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
+                        `;
+                    } else {
+                        resultText = `${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg once daily`;
+                    }
+                }
             } else {
-                resultText = `${Math.round(dailyTotalMg)} mg once daily`;
+                // Single value, no frequency
+                if (concentration && concentration > 0) {
+                    const dailyTotalMl = dailyTotalMinMg / concentration;
+                    resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
+                    breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)} mg per day</div>`;
+                } else {
+                    resultText = `${Math.round(dailyTotalMinMg)} mg once daily`;
+                }
             }
         }
         
