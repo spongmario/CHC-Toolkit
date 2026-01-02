@@ -341,6 +341,9 @@
             <!-- Dosing Calculator Page -->
             <div id="dosing-calculator-page" class="page">
                 <div class="page-header">
+                    <button class="back-button" onclick="goBackToPathways()" aria-label="Go back to Provider Resources">
+                        ← Back to Provider Resources
+                    </button>
                     <h2>Medication Dosing Calculator</h2>
                     <p class="page-subtitle">Calculate medication dosages based on patient weight and clinical parameters</p>
                 </div>
@@ -394,6 +397,90 @@
                                 <h3 class="dosing-result-title">Dose</h3>
                                 <div id="dosingResultValue" class="dosing-result-value">-</div>
                                 <div id="dosingBreakdown" class="dosing-breakdown"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Pediatric Tylenol/Motrin Dosing Page -->
+            <div id="pediatric-dosing-page" class="page">
+                <div class="page-header">
+                    <button class="back-button" onclick="goBackToPathways()" aria-label="Go back to Provider Resources">
+                        ← Back to Provider Resources
+                    </button>
+                    <h2>Pediatric Tylenol/Motrin Dosing</h2>
+                    <p class="page-subtitle">Pediatric acetaminophen (Tylenol) and ibuprofen (Motrin/Advil) dosing reference charts</p>
+                </div>
+                <div class="calculator-content">
+                    <!-- Tylenol Chart -->
+                    <section class="card">
+                        <h2>Acetaminophen (Tylenol) Dosing Chart</h2>
+                        <div class="reference-chart-container">
+                            <div class="pediatric-dosing-instructions" style="margin-bottom: 20px;">
+                                <ul>
+                                    <li>If needed, repeat doses every 4 hours while symptoms last.</li>
+                                    <li>Do not use more than 5 times a day.</li>
+                                </ul>
+                            </div>
+                            <div id="tylenolChart" class="dosing-chart active">
+                                <table class="dosing-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Weight</th>
+                                            <th>Age</th>
+                                            <th>Oral Suspension<br>(160 mg/5 mL)</th>
+                                            <th>Chewable Tablets<br>(160 mg/Chew)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>6-11 lbs<br>(2.7-5.4 kg)</td><td>0-3 mos</td><td>1.25 mL</td><td>-</td></tr>
+                                        <tr><td>12-17 lbs<br>(5.5-7.9 kg)</td><td>4-11 mos</td><td>2.5 mL</td><td>-</td></tr>
+                                        <tr><td>18-23 lbs<br>(8-10.9 kg)</td><td>12-23 mos</td><td>3.75 mL</td><td>-</td></tr>
+                                        <tr><td>24-35 lbs<br>(11-15.9 kg)</td><td>2-3 yrs</td><td>5 mL</td><td>1 tabs</td></tr>
+                                        <tr><td>36-47 lbs<br>(16-21.9 kg)</td><td>4-5 yrs</td><td>7.5 mL</td><td>1 1/2 tabs</td></tr>
+                                        <tr><td>48-59 lbs<br>(22-26.9 kg)</td><td>6-8 yrs</td><td>10 mL</td><td>2 tabs</td></tr>
+                                        <tr><td>60-71 lbs<br>(27-32.9 kg)</td><td>9-10 yrs</td><td>12.5 mL</td><td>2 1/2 tabs</td></tr>
+                                        <tr><td>72-95 lbs<br>(33-43.2 kg)</td><td>11+ yrs</td><td>15 mL</td><td>3 tabs</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Motrin Chart -->
+                    <section class="card">
+                        <h2>Ibuprofen (Motrin/Advil) Dosing Chart</h2>
+                        <div class="reference-chart-container">
+                            <div class="pediatric-dosing-instructions" style="margin-bottom: 20px;">
+                                <ul>
+                                    <li><strong style="color: #d32f2f;">Do NOT use with infants under 6 months in age.</strong></li>
+                                    <li>If needed, repeat doses every 6 hours while symptoms last.</li>
+                                    <li>Do not use more than 4 times a day.</li>
+                                </ul>
+                            </div>
+                            <div id="motrinChart" class="dosing-chart active">
+                                <table class="dosing-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Weight</th>
+                                            <th>Age</th>
+                                            <th>Infants' Drops<br>(50 mg/1.25 mL)</th>
+                                            <th>Oral Suspension<br>(100 mg/5 mL)</th>
+                                            <th>Chewable Tablets<br>(100 mg/Chew)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="background-color: #ffebee;"><td colspan="5" style="text-align: center; color: #d32f2f; font-weight: bold;">DO NOT USE IN INFANTS UNDER 6 MONTHS</td></tr>
+                                        <tr><td>12-17 lbs<br>(5.5-7.9 kg)</td><td>6-11 mos</td><td>1.25 mL</td><td>-</td><td>-</td></tr>
+                                        <tr><td>18-23 lbs<br>(8-10.9 kg)</td><td>12-23 mos</td><td>1.875 mL</td><td>-</td><td>-</td></tr>
+                                        <tr><td>24-35 lbs<br>(11-15.9 kg)</td><td>2-3 yrs</td><td>-</td><td>5 mL</td><td>1 tab</td></tr>
+                                        <tr><td>36-47 lbs<br>(16-21.9 kg)</td><td>4-5 yrs</td><td>-</td><td>7.5 mL</td><td>1 1/2 tabs</td></tr>
+                                        <tr><td>48-59 lbs<br>(22-26.9 kg)</td><td>6-8 yrs</td><td>-</td><td>10 mL</td><td>2 tabs</td></tr>
+                                        <tr><td>60-71 lbs<br>(27-32.9 kg)</td><td>9-10 yrs</td><td>-</td><td>12.5 mL</td><td>2 1/2 tabs</td></tr>
+                                        <tr><td>72-95 lbs<br>(33-43.2 kg)</td><td>11+ yrs</td><td>-</td><td>15 mL</td><td>3 tabs</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </section>

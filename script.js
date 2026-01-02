@@ -912,6 +912,14 @@ function navigateToPage(pageId) {
             initializeDosingCalculator();
         }, 100);
     }
+    
+    // Initialize Pediatric Dosing Calculator when navigating to pediatric dosing page
+    if (pageId === 'pediatric-dosing') {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            initializePediatricDosing();
+        }, 100);
+    }
 }
 
 function initializeNavigation() {
@@ -1279,8 +1287,8 @@ function renderPathways(filter = '', category = null) {
     }
     
     // Create list HTML
-    // Add dosing calculator link if category is 'guide'
-    const dosingCalculatorLink = category === 'guide' ? `
+    // Add dosing calculator links if category is 'guide'
+    const dosingCalculatorLinks = category === 'guide' ? `
         <div class="pathway-list-item" onclick="showDosingCalculator()">
             <div class="pathway-list-icon">💊</div>
             <div class="pathway-list-info" style="flex:1;">
@@ -1291,11 +1299,21 @@ function renderPathways(filter = '', category = null) {
                 <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showDosingCalculator();">Open</button>
             </div>
         </div>
+        <div class="pathway-list-item" onclick="showPediatricDosing()">
+            <div class="pathway-list-icon">👶</div>
+            <div class="pathway-list-info" style="flex:1;">
+                <div class="pathway-list-name">Pediatric Tylenol/Motrin Dosing</div>
+                <div class="pathway-list-meta">Calculate pediatric acetaminophen and ibuprofen dosages</div>
+            </div>
+            <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showPediatricDosing();">Open</button>
+            </div>
+        </div>
     ` : '';
     
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${dosingCalculatorLink}
+            ${dosingCalculatorLinks}
             ${filteredPathways.map((pathway) => {
                 const fileIcon = getFileIcon(pathway.fileType);
                 // Find the actual index in the original pathways array
@@ -3115,6 +3133,24 @@ function showDosingCalculator() {
     }
 }
 
+function goBackToPathways() {
+    // Navigate to pathways page
+    navigateToPage('pathways');
+    
+    // Switch to the Guides tab
+    if (typeof switchPathwayCategoryTab === 'function') {
+        switchPathwayCategoryTab('guide');
+    }
+    
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth <= 768 && closeSidebar) {
+        closeSidebar();
+    }
+}
+
+// Make goBackToPathways available globally
+window.goBackToPathways = goBackToPathways;
+
 function initializeDosingCalculator() {
     const weightInput = document.getElementById('patientWeight');
     const weightUnitKg = document.getElementById('weightUnitKg');
@@ -3519,6 +3555,283 @@ function initializeDosingCalculator() {
 
 // Make showDosingCalculator available globally
 window.showDosingCalculator = showDosingCalculator;
+
+// ==================== Pediatric Tylenol/Motrin Dosing Calculator ====================
+
+// Dosing data based on the charts
+const TYLENOL_DOSING = [
+    { weightLbs: [6, 11], weightKg: [2.7, 5.4], age: '0-3 mos', suspension: 1.25, tablets: null },
+    { weightLbs: [12, 17], weightKg: [5.5, 7.9], age: '4-11 mos', suspension: 2.5, tablets: null },
+    { weightLbs: [18, 23], weightKg: [8, 10.9], age: '12-23 mos', suspension: 3.75, tablets: null },
+    { weightLbs: [24, 35], weightKg: [11, 15.9], age: '2-3 yrs', suspension: 5, tablets: 1 },
+    { weightLbs: [36, 47], weightKg: [16, 21.9], age: '4-5 yrs', suspension: 7.5, tablets: 1.5 },
+    { weightLbs: [48, 59], weightKg: [22, 26.9], age: '6-8 yrs', suspension: 10, tablets: 2 },
+    { weightLbs: [60, 71], weightKg: [27, 32.9], age: '9-10 yrs', suspension: 12.5, tablets: 2.5 },
+    { weightLbs: [72, 95], weightKg: [33, 43.2], age: '11+ yrs', suspension: 15, tablets: 3 }
+];
+
+const MOTRIN_DOSING = [
+    { weightLbs: [12, 17], weightKg: [5.5, 7.9], age: '6-11 mos', drops: 1.25, suspension: null, tablets: null },
+    { weightLbs: [18, 23], weightKg: [8, 10.9], age: '12-23 mos', drops: 1.875, suspension: null, tablets: null },
+    { weightLbs: [24, 35], weightKg: [11, 15.9], age: '2-3 yrs', drops: null, suspension: 5, tablets: 1 },
+    { weightLbs: [36, 47], weightKg: [16, 21.9], age: '4-5 yrs', drops: null, suspension: 7.5, tablets: 1.5 },
+    { weightLbs: [48, 59], weightKg: [22, 26.9], age: '6-8 yrs', drops: null, suspension: 10, tablets: 2 },
+    { weightLbs: [60, 71], weightKg: [27, 32.9], age: '9-10 yrs', drops: null, suspension: 12.5, tablets: 2.5 },
+    { weightLbs: [72, 95], weightKg: [33, 43.2], age: '11+ yrs', drops: null, suspension: 15, tablets: 3 }
+];
+
+function showPediatricDosing() {
+    // Navigate to pediatric dosing page
+    navigateToPage('pediatric-dosing');
+    
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth <= 768 && closeSidebar) {
+        closeSidebar();
+    }
+}
+
+function findDosingByWeight(weight, isKg, dosingArray) {
+    const weightValue = parseFloat(weight);
+    if (isNaN(weightValue) || weightValue <= 0) return null;
+    
+    for (const dose of dosingArray) {
+        const weightRange = isKg ? dose.weightKg : dose.weightLbs;
+        if (weightValue >= weightRange[0] && weightValue <= weightRange[1]) {
+            return dose;
+        }
+    }
+    return null;
+}
+
+function calculatePediatricDosing() {
+    const weightInput = document.getElementById('pedWeight');
+    const weightUnitLbs = document.getElementById('pedWeightUnitLbs');
+    const tylenolSection = document.getElementById('tylenolSection');
+    const motrinSection = document.getElementById('motrinSection');
+    const tylenolResults = document.getElementById('tylenolResults');
+    const motrinResults = document.getElementById('motrinResults');
+    
+    if (!weightInput || !tylenolSection || !motrinSection) return;
+    
+    const weight = weightInput.value.trim();
+    if (!weight) {
+        tylenolSection.style.display = 'none';
+        motrinSection.style.display = 'none';
+        return;
+    }
+    
+    const isKg = weightUnitLbs && !weightUnitLbs.checked;
+    const weightValue = parseFloat(weight);
+    
+    if (isNaN(weightValue) || weightValue <= 0) {
+        tylenolSection.style.display = 'none';
+        motrinSection.style.display = 'none';
+        return;
+    }
+    
+    // Check minimum weight requirements
+    const minWeightTylenol = isKg ? 2.7 : 6;  // 6 lbs / 2.7 kg
+    const minWeightMotrin = isKg ? 5.5 : 12;  // 12 lbs / 5.5 kg
+    const maxWeight = isKg ? 43.2 : 95;  // 95 lbs / 43.2 kg
+    
+    // Check if weight is too low for Tylenol
+    if (weightValue < minWeightTylenol) {
+        tylenolResults.innerHTML = `
+            <div class="dosing-error">
+                <strong>Weight too low:</strong> Patient weight (${weight} ${isKg ? 'kg' : 'lbs'}) is below the minimum dosing range (${minWeightTylenol} ${isKg ? 'kg' : 'lbs'}). 
+                Please consult with a healthcare provider for appropriate dosing.
+            </div>
+        `;
+        tylenolSection.style.display = 'block';
+        motrinSection.style.display = 'none';
+        return;
+    }
+    
+    // Check maximum weight
+    
+    if (weightValue > maxWeight) {
+        tylenolResults.innerHTML = `
+            <div class="dosing-warning">
+                <strong>Weight exceeds chart range:</strong> Patient weight (${weight} ${isKg ? 'kg' : 'lbs'}) exceeds the maximum range on this chart (${maxWeight} ${isKg ? 'kg' : 'lbs'}). 
+                Please consult with a healthcare provider for appropriate dosing.
+            </div>
+        `;
+        tylenolSection.style.display = 'block';
+        motrinResults.innerHTML = `
+            <div class="dosing-warning">
+                <strong>Weight exceeds chart range:</strong> Patient weight (${weight} ${isKg ? 'kg' : 'lbs'}) exceeds the maximum range on this chart (${maxWeight} ${isKg ? 'kg' : 'lbs'}). 
+                Please consult with a healthcare provider for appropriate dosing.
+            </div>
+        `;
+        motrinSection.style.display = 'block';
+        return;
+    }
+    
+    // Check if weight is too low for Motrin (but still show Tylenol)
+    if (weightValue < minWeightMotrin) {
+        // Show Tylenol results
+        const tylenolDose = findDosingByWeight(weightValue, isKg, TYLENOL_DOSING);
+        if (tylenolDose) {
+            let html = `<div class="dosing-info">`;
+            html += `<div class="dosing-header"><strong>Weight:</strong> ${weight} ${isKg ? 'kg' : 'lbs'} | <strong>Age Range:</strong> ${tylenolDose.age}</div>`;
+            html += `<div class="dosing-options">`;
+            
+            if (tylenolDose.suspension !== null) {
+                html += `<div class="dosing-option">`;
+                html += `<div class="dosing-option-title">Infants' & Children's Oral Suspension</div>`;
+                html += `<div class="dosing-option-details">Active Ingredient: acetaminophen 160 mg/5 mL</div>`;
+                html += `<div class="dosing-amount"><strong>${tylenolDose.suspension} mL</strong></div>`;
+                html += `</div>`;
+            }
+            
+            if (tylenolDose.tablets !== null) {
+                html += `<div class="dosing-option">`;
+                html += `<div class="dosing-option-title">Chewable Tablets</div>`;
+                html += `<div class="dosing-option-details">Active Ingredient: acetaminophen 160 mg/Chew</div>`;
+                html += `<div class="dosing-amount"><strong>${tylenolDose.tablets} ${tylenolDose.tablets === 1 ? 'tab' : 'tabs'}</strong></div>`;
+                html += `</div>`;
+            }
+            
+            html += `</div></div>`;
+            tylenolResults.innerHTML = html;
+            tylenolSection.style.display = 'block';
+        }
+        
+        // Show Motrin warning
+        motrinResults.innerHTML = `
+            <div class="dosing-error">
+                <strong>⚠️ DO NOT USE:</strong> Ibuprofen should NOT be used in infants under 6 months of age or weighing less than 12 lbs (5.5 kg).
+            </div>
+        `;
+        motrinSection.style.display = 'block';
+        return;
+    }
+    
+    // Find Tylenol dosing
+    const tylenolDose = findDosingByWeight(weightValue, isKg, TYLENOL_DOSING);
+    if (tylenolDose) {
+        let html = `<div class="dosing-info">`;
+        html += `<div class="dosing-header"><strong>Weight:</strong> ${weight} ${isKg ? 'kg' : 'lbs'} | <strong>Age Range:</strong> ${tylenolDose.age}</div>`;
+        html += `<div class="dosing-options">`;
+        
+        if (tylenolDose.suspension !== null) {
+            html += `<div class="dosing-option">`;
+            html += `<div class="dosing-option-title">Infants' & Children's Oral Suspension</div>`;
+            html += `<div class="dosing-option-details">Active Ingredient: acetaminophen 160 mg/5 mL</div>`;
+            html += `<div class="dosing-amount"><strong>${tylenolDose.suspension} mL</strong></div>`;
+            html += `</div>`;
+        }
+        
+        if (tylenolDose.tablets !== null) {
+            html += `<div class="dosing-option">`;
+            html += `<div class="dosing-option-title">Chewable Tablets</div>`;
+            html += `<div class="dosing-option-details">Active Ingredient: acetaminophen 160 mg/Chew</div>`;
+            html += `<div class="dosing-amount"><strong>${tylenolDose.tablets} ${tylenolDose.tablets === 1 ? 'tab' : 'tabs'}</strong></div>`;
+            html += `</div>`;
+        }
+        
+        html += `</div></div>`;
+        tylenolResults.innerHTML = html;
+        tylenolSection.style.display = 'block';
+    } else {
+        tylenolSection.style.display = 'none';
+    }
+    
+    // Find Motrin dosing (only if weight is >= 12 lbs / 5.5 kg)
+    const motrinDose = findDosingByWeight(weightValue, isKg, MOTRIN_DOSING);
+    if (motrinDose && weightValue >= minWeightMotrin) {
+        let html = `<div class="dosing-info">`;
+        html += `<div class="dosing-header"><strong>Weight:</strong> ${weight} ${isKg ? 'kg' : 'lbs'} | <strong>Age Range:</strong> ${motrinDose.age}</div>`;
+        html += `<div class="dosing-options">`;
+        
+        if (motrinDose.drops !== null) {
+            html += `<div class="dosing-option">`;
+            html += `<div class="dosing-option-title">Concentrated Infants' Drops</div>`;
+            html += `<div class="dosing-option-details">Active Ingredient: ibuprofen 50 mg/1.25 mL</div>`;
+            html += `<div class="dosing-amount"><strong>${motrinDose.drops} mL</strong></div>`;
+            html += `</div>`;
+        }
+        
+        if (motrinDose.suspension !== null) {
+            html += `<div class="dosing-option">`;
+            html += `<div class="dosing-option-title">Children's Oral Suspension</div>`;
+            html += `<div class="dosing-option-details">Active Ingredient: ibuprofen 100 mg/5 mL</div>`;
+            html += `<div class="dosing-amount"><strong>${motrinDose.suspension} mL</strong></div>`;
+            html += `</div>`;
+        }
+        
+        if (motrinDose.tablets !== null) {
+            html += `<div class="dosing-option">`;
+            html += `<div class="dosing-option-title">Chewable Tablets</div>`;
+            html += `<div class="dosing-option-details">Active Ingredient: ibuprofen 100 mg/Chew</div>`;
+            html += `<div class="dosing-amount"><strong>${motrinDose.tablets} ${motrinDose.tablets === 1 ? 'tab' : 'tabs'}</strong></div>`;
+            html += `</div>`;
+        }
+        
+        html += `</div></div>`;
+        motrinResults.innerHTML = html;
+        motrinSection.style.display = 'block';
+    } else {
+        motrinSection.style.display = 'none';
+    }
+}
+
+function switchDosingChart(chartType) {
+    const tylenolChart = document.getElementById('tylenolChart');
+    const motrinChart = document.getElementById('motrinChart');
+    const tabs = document.querySelectorAll('.chart-tab');
+    
+    tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.chart === chartType) {
+            tab.classList.add('active');
+        }
+    });
+    
+    if (chartType === 'tylenol') {
+        tylenolChart.classList.add('active');
+        motrinChart.classList.remove('active');
+    } else {
+        tylenolChart.classList.remove('active');
+        motrinChart.classList.add('active');
+    }
+}
+
+function initializePediatricDosing() {
+    const weightInput = document.getElementById('pedWeight');
+    const weightUnitLbs = document.getElementById('pedWeightUnitLbs');
+    const weightUnitKg = document.getElementById('pedWeightUnitKg');
+    const weightUnitDisplay = document.getElementById('pedWeightUnitDisplay');
+    
+    if (!weightInput || !weightUnitLbs || !weightUnitKg) return;
+    
+    // Update unit display
+    function updatePedUnitDisplay() {
+        if (weightUnitDisplay) {
+            weightUnitDisplay.textContent = weightUnitLbs.checked ? 'lbs' : 'kg';
+        }
+    }
+    
+    // Event listeners
+    weightInput.addEventListener('input', calculatePediatricDosing);
+    weightInput.addEventListener('change', calculatePediatricDosing);
+    
+    weightUnitLbs.addEventListener('change', () => {
+        updatePedUnitDisplay();
+        calculatePediatricDosing();
+    });
+    
+    weightUnitKg.addEventListener('change', () => {
+        updatePedUnitDisplay();
+        calculatePediatricDosing();
+    });
+    
+    updatePedUnitDisplay();
+}
+
+// Make functions available globally
+window.showPediatricDosing = showPediatricDosing;
+window.switchDosingChart = switchDosingChart;
 
 
 
