@@ -904,6 +904,14 @@ function navigateToPage(pageId) {
     if (pageId === 'forms') {
         initializeForms();
     }
+    
+    // Initialize Dosing Calculator when navigating to dosing calculator page
+    if (pageId === 'dosing-calculator') {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+            initializeDosingCalculator();
+        }, 100);
+    }
 }
 
 function initializeNavigation() {
@@ -1271,8 +1279,23 @@ function renderPathways(filter = '', category = null) {
     }
     
     // Create list HTML
+    // Add dosing calculator link if category is 'guide'
+    const dosingCalculatorLink = category === 'guide' ? `
+        <div class="pathway-list-item" onclick="showDosingCalculator()">
+            <div class="pathway-list-icon">💊</div>
+            <div class="pathway-list-info" style="flex:1;">
+                <div class="pathway-list-name">Medication Dosing Calculator</div>
+                <div class="pathway-list-meta">Calculate medication dosages based on patient weight</div>
+            </div>
+            <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); showDosingCalculator();">Open</button>
+            </div>
+        </div>
+    ` : '';
+    
     container.innerHTML = `
         <div class="pathway-list-container">
+            ${dosingCalculatorLink}
             ${filteredPathways.map((pathway) => {
                 const fileIcon = getFileIcon(pathway.fileType);
                 // Find the actual index in the original pathways array
@@ -3079,6 +3102,173 @@ Object.defineProperty(window, 'providers', {
     configurable: true
 });
 window.BASE_PROVIDERS = BASE_PROVIDERS;
+
+// ==================== Dosing Calculator ====================
+
+function showDosingCalculator() {
+    // Navigate to dosing calculator page
+    navigateToPage('dosing-calculator');
+    
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth <= 768 && closeSidebar) {
+        closeSidebar();
+    }
+}
+
+function initializeDosingCalculator() {
+    const weightInput = document.getElementById('patientWeight');
+    const weightUnitKg = document.getElementById('weightUnitKg');
+    const weightUnitLbs = document.getElementById('weightUnitLbs');
+    const dosePerKgInput = document.getElementById('dosePerKg');
+    const concentrationInput = document.getElementById('medicationConcentration');
+    const frequencyInput = document.getElementById('dosingFrequency');
+    const resultBox = document.getElementById('dosingResult');
+    const resultValue = document.getElementById('dosingResultValue');
+    const resultBreakdown = document.getElementById('dosingBreakdown');
+    
+    function getFrequencyLabel(hours) {
+        const labels = {
+            1: 'Every hour (Q1H)',
+            2: 'Every 2 hours (Q2H)',
+            4: 'Every 4 hours (Q4H)',
+            6: 'Every 6 hours (Q6H)',
+            8: 'Every 8 hours (Q8H)',
+            12: 'Every 12 hours (Q12H)',
+            24: 'Daily (Q24H)',
+            48: 'Every 48 hours (Q48H)'
+        };
+        return labels[hours] || `Every ${hours} hours`;
+    }
+    
+    function getPrescriptionFrequency(hours) {
+        const dosesPerDay = 24 / hours;
+        if (dosesPerDay === 1) return 'once daily';
+        if (dosesPerDay === 2) return 'twice daily';
+        if (dosesPerDay === 3) return 'three times daily';
+        if (dosesPerDay === 4) return 'four times daily';
+        if (dosesPerDay === 6) return 'six times daily';
+        if (dosesPerDay === 12) return 'twelve times daily';
+        if (dosesPerDay === 24) return 'every hour';
+        // For other frequencies, use the original format
+        return getFrequencyLabel(hours).toLowerCase();
+    }
+    
+    function parseConcentration(inputValue) {
+        if (!inputValue || inputValue.trim() === '') return null;
+        
+        const value = inputValue.trim();
+        
+        // Check if it contains a slash (ratio format like "100/5" or "100mg/5mL")
+        if (value.includes('/')) {
+            // Extract numbers from the ratio (handles formats like "100/5", "100mg/5mL", "100/5mL")
+            const parts = value.split('/');
+            if (parts.length === 2) {
+                // Extract first number (numerator)
+                const numeratorMatch = parts[0].match(/(\d+\.?\d*)/);
+                // Extract second number (denominator)
+                const denominatorMatch = parts[1].match(/(\d+\.?\d*)/);
+                
+                if (numeratorMatch && denominatorMatch) {
+                    const numerator = parseFloat(numeratorMatch[1]);
+                    const denominator = parseFloat(denominatorMatch[1]);
+                    if (denominator > 0) {
+                        return numerator / denominator;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // Try to parse as direct number
+        const directValue = parseFloat(value);
+        if (!isNaN(directValue) && directValue > 0) {
+            return directValue;
+        }
+        
+        return null;
+    }
+    
+    function calculateDose() {
+        const weightInputValue = parseFloat(weightInput.value);
+        const weightUnit = weightUnitKg && weightUnitKg.checked ? 'kg' : 'lbs';
+        const dosePerKgPerDay = parseFloat(dosePerKgInput.value);
+        const concentration = parseConcentration(concentrationInput.value);
+        const frequencyHours = frequencyInput ? parseFloat(frequencyInput.value) : null;
+        
+        // Only require weight and dose per kg (concentration is optional)
+        if (!weightInputValue || !dosePerKgPerDay || weightInputValue <= 0 || dosePerKgPerDay <= 0) {
+            resultBox.style.display = 'none';
+            return;
+        }
+        
+        // Convert weight to kg if needed (1 kg = 2.20462 lbs)
+        const weightInKg = weightUnit === 'lbs' ? weightInputValue / 2.20462 : weightInputValue;
+        
+        // Calculate daily total dose in mg (dosePerKgPerDay is already mg/kg/day)
+        const dailyTotalMg = weightInKg * dosePerKgPerDay;
+        
+        // Calculate per dose if frequency is provided
+        let perDoseMg = null;
+        let perDoseMl = null;
+        if (frequencyHours && frequencyHours > 0) {
+            const dosesPerDay = 24 / frequencyHours;
+            perDoseMg = dailyTotalMg / dosesPerDay;
+            if (concentration && concentration > 0) {
+                perDoseMl = perDoseMg / concentration;
+            }
+        }
+        
+        // Build prescription-like output
+        let resultText = '';
+        
+        if (frequencyHours && perDoseMg !== null) {
+            // Show per dose with frequency
+            const frequencyText = getPrescriptionFrequency(frequencyHours);
+            
+            // Prefer mL if available, otherwise show mg
+            if (perDoseMl !== null) {
+                resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
+            } else {
+                resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
+            }
+        } else {
+            // Show daily total
+            if (concentration && concentration > 0) {
+                const dailyTotalMl = dailyTotalMg / concentration;
+                resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
+            } else {
+                resultText = `${Math.round(dailyTotalMg)} mg once daily`;
+            }
+        }
+        
+        resultValue.textContent = resultText;
+        resultBreakdown.innerHTML = '';
+        resultBox.style.display = 'block';
+    }
+    
+    // Add event listeners
+    if (weightInput) {
+        weightInput.addEventListener('input', calculateDose);
+    }
+    if (weightUnitKg) {
+        weightUnitKg.addEventListener('change', calculateDose);
+    }
+    if (weightUnitLbs) {
+        weightUnitLbs.addEventListener('change', calculateDose);
+    }
+    if (dosePerKgInput) {
+        dosePerKgInput.addEventListener('input', calculateDose);
+    }
+    if (concentrationInput) {
+        concentrationInput.addEventListener('input', calculateDose);
+    }
+    if (frequencyInput) {
+        frequencyInput.addEventListener('change', calculateDose);
+    }
+}
+
+// Make showDosingCalculator available globally
+window.showDosingCalculator = showDosingCalculator;
 
 
 
