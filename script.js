@@ -3336,12 +3336,12 @@ function initializeDosingCalculator() {
                     if (optimizedDose && optimizedDose.ml !== null) {
                         resultText = `${optimizedDose.ml.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
-                            <div class="breakdown-item">${optimizedDose.ml.toFixed(1)} mL (${Math.round(optimizedDose.mg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
-                            <div class="breakdown-item">Min: ${perDoseMinMl.toFixed(1)} mL (${Math.round(perDoseMinMg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 8px;">Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
+                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDose.ml.toFixed(1)} mL (${Math.round(optimizedDose.mg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Min: ${perDoseMinMl.toFixed(1)} mL (${Math.round(perDoseMinMg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
@@ -3355,12 +3355,12 @@ function initializeDosingCalculator() {
                     if (optimizedDose && optimizedDose.mg !== null) {
                         resultText = `${optimizedDose.mg} mg ${frequencyText}`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
-                            <div class="breakdown-item">${optimizedDose.mg} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
-                            <div class="breakdown-item">Min: ${Math.round(perDoseMinMg)} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 8px;">Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
+                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDose.mg} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Min: ${Math.round(perDoseMinMg)} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
+                            <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
                     } else {
                         resultText = `${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg ${frequencyText}`;
@@ -3393,11 +3393,11 @@ function initializeDosingCalculator() {
                     if (optimizedDaily && optimizedDaily.ml !== null) {
                         resultText = `${optimizedDaily.ml.toFixed(1)} mL once daily`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
-                            <div class="breakdown-item">${optimizedDaily.ml.toFixed(1)} mL (${Math.round(optimizedDaily.mg)} mg) once daily</div>
-                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
-                            <div class="breakdown-item">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
-                            <div class="breakdown-item">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
+                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDaily.ml.toFixed(1)} mL (${Math.round(optimizedDaily.mg)} mg) once daily</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
                         `;
                     } else {
                         resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
@@ -3408,11 +3408,11 @@ function initializeDosingCalculator() {
                     if (optimizedDaily && optimizedDaily.mg !== null) {
                         resultText = `${optimizedDaily.mg} mg once daily`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 8px;">Optimized Dose:</div>
-                            <div class="breakdown-item">${optimizedDaily.mg} mg once daily</div>
-                            <div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">Range:</div>
-                            <div class="breakdown-item">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
-                            <div class="breakdown-item">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
+                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDaily.mg} mg once daily</div>
+                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
+                            <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
                         `;
                     } else {
                         resultText = `${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg once daily`;

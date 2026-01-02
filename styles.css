@@ -1643,14 +1643,21 @@ html {
 }
 
 .dosing-result-title {
-    color: white;
+    color: #ffffff !important;
     margin-bottom: 20px;
+    margin-top: 0;
     border: none;
     padding: 0;
     text-align: center;
-    font-size: 1.3em;
+    font-size: 1.1em;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
+    opacity: 1;
+}
+
+.dosing-result-box .dosing-result-title,
+.dosing-result-box h3.dosing-result-title {
+    color: #ffffff !important;
 }
 
 .dosing-result-value {
