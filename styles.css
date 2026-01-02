@@ -1996,12 +1996,63 @@ html {
         font-size: 0.9em;
     }
     
-    .dosing-table {
-        font-size: 0.85em;
+    /* Mobile improvements for pediatric dosing */
+    .card {
+        padding: 10px;
+        margin-bottom: 10px;
     }
     
-    .dosing-table th,
+    .card h2 {
+        font-size: 1.2em;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+    }
+    
+    .pediatric-dosing-instructions {
+        padding: 8px;
+        margin-bottom: 8px;
+        font-size: 0.9em;
+    }
+    
+    .pediatric-dosing-instructions ul {
+        padding-left: 20px;
+        line-height: 1.5;
+    }
+    
+    .pediatric-dosing-instructions li {
+        margin-bottom: 4px;
+    }
+    
+    .reference-chart-container {
+        padding: 6px;
+    }
+    
+    .dosing-chart {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .dosing-table {
+        font-size: 0.7em;
+        min-width: 600px;
+    }
+    
+    .dosing-table th {
+        padding: 6px 5px;
+        font-size: 0.7em;
+        line-height: 1.2;
+    }
+    
     .dosing-table td {
-        padding: 8px 6px;
+        padding: 6px 5px;
+        font-size: 0.7em;
+        line-height: 1.2;
+    }
+    
+    /* Better line breaks for mobile */
+    .dosing-table th br,
+    .dosing-table td br {
+        display: block;
+        margin: 2px 0;
     }
 }
