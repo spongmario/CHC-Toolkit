@@ -3220,6 +3220,7 @@ function initializeDosingCalculator() {
         
         // Build prescription-like output
         let resultText = '';
+        let breakdownHTML = '';
         
         if (frequencyHours && perDoseMg !== null) {
             // Show per dose with frequency
@@ -3228,6 +3229,11 @@ function initializeDosingCalculator() {
             // Prefer mL if available, otherwise show mg
             if (perDoseMl !== null) {
                 resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
+                // Add mg information for liquid
+                breakdownHTML = `
+                    <div class="breakdown-item">${Math.round(perDoseMg)} mg every ${frequencyHours} hours</div>
+                    <div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>
+                `;
             } else {
                 resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
             }
@@ -3236,14 +3242,28 @@ function initializeDosingCalculator() {
             if (concentration && concentration > 0) {
                 const dailyTotalMl = dailyTotalMg / concentration;
                 resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
+                breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>`;
             } else {
                 resultText = `${Math.round(dailyTotalMg)} mg once daily`;
             }
         }
         
         resultValue.textContent = resultText;
-        resultBreakdown.innerHTML = '';
+        resultBreakdown.innerHTML = breakdownHTML;
         resultBox.style.display = 'block';
+    }
+    
+    // Update button styles when radio buttons change
+    function updateUnitButtonStyles() {
+        const unitLabels = document.querySelectorAll('.unit-radio-label');
+        unitLabels.forEach(label => {
+            const radio = label.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+                label.classList.add('checked');
+            } else {
+                label.classList.remove('checked');
+            }
+        });
     }
     
     // Add event listeners
@@ -3251,10 +3271,16 @@ function initializeDosingCalculator() {
         weightInput.addEventListener('input', calculateDose);
     }
     if (weightUnitKg) {
-        weightUnitKg.addEventListener('change', calculateDose);
+        weightUnitKg.addEventListener('change', () => {
+            updateUnitButtonStyles();
+            calculateDose();
+        });
     }
     if (weightUnitLbs) {
-        weightUnitLbs.addEventListener('change', calculateDose);
+        weightUnitLbs.addEventListener('change', () => {
+            updateUnitButtonStyles();
+            calculateDose();
+        });
     }
     if (dosePerKgInput) {
         dosePerKgInput.addEventListener('input', calculateDose);
@@ -3265,6 +3291,9 @@ function initializeDosingCalculator() {
     if (frequencyInput) {
         frequencyInput.addEventListener('change', calculateDose);
     }
+    
+    // Initialize button styles
+    updateUnitButtonStyles();
 }
 
 // Make showDosingCalculator available globally
