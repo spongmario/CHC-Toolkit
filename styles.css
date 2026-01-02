@@ -1544,6 +1544,19 @@ html {
     padding-right: 50px !important;
 }
 
+/* Remove spinner from weight input */
+#patientWeight::-webkit-outer-spin-button,
+#patientWeight::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+#patientWeight {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 .weight-unit-display {
     position: absolute;
     right: 20px;
