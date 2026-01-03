@@ -1505,12 +1505,51 @@ function viewPathway(index) {
                 </div>
             `;
         }
+        const backButtonTop = relatedBanner ? '50px' : '0';
+        const embedTop = relatedBanner ? '50px' : '0';
+        const embedHeight = relatedBanner ? 'calc(100vh - 50px)' : '100vh';
         newWindow.document.write(`
             <html>
-                <head><title>${escapeHtml(pathway.name)}</title></head>
+                <head>
+                    <title>${escapeHtml(pathway.name)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        .mobile-back-button {
+                            display: none;
+                        }
+                        @media (max-width: 768px) {
+                            .mobile-back-button {
+                                display: block;
+                                position: fixed;
+                                top: ${backButtonTop};
+                                left: 0;
+                                right: 0;
+                                z-index: 10001;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 12px 20px;
+                                font-size: 1em;
+                                font-weight: 600;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                                text-align: left;
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            }
+                            .mobile-back-button:active {
+                                background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                            }
+                            embed {
+                                top: ${relatedBanner ? '100px' : '50px'} !important;
+                                height: ${relatedBanner ? 'calc(100vh - 100px)' : 'calc(100vh - 50px)'} !important;
+                            }
+                        }
+                    </style>
+                </head>
                 <body style="margin:0;padding:0;">
+                    <button class="mobile-back-button" onclick="window.close();" aria-label="Go back">← Back</button>
                     ${relatedBanner}
-                    <embed src="${pathway.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:${relatedBanner ? '50px' : '0'};left:0;width:100%;height:${relatedBanner ? 'calc(100vh - 50px)' : '100vh'};" />
+                    <embed src="${pathway.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:${embedTop};left:0;width:100%;height:${embedHeight};" />
                 </body>
             </html>
         `);
@@ -1561,8 +1600,44 @@ function viewPathwayByUrl(url, name) {
     const newWindow = window.open();
     newWindow.document.write(`
         <html>
-            <head><title>${escapeHtml(name)}</title></head>
+            <head>
+                <title>${escapeHtml(name)}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    .mobile-back-button {
+                        display: none;
+                    }
+                    @media (max-width: 768px) {
+                        .mobile-back-button {
+                            display: block;
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            z-index: 10001;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 12px 20px;
+                            font-size: 1em;
+                            font-weight: 600;
+                            cursor: pointer;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                            text-align: left;
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        }
+                        .mobile-back-button:active {
+                            background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                        }
+                        embed {
+                            top: 50px !important;
+                            height: calc(100vh - 50px) !important;
+                        }
+                    }
+                </style>
+            </head>
             <body style="margin:0;padding:0;">
+                <button class="mobile-back-button" onclick="window.close();" aria-label="Go back">← Back</button>
                 <embed src="${url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
             </body>
         </html>
@@ -2216,8 +2291,44 @@ function openPTGuideWindow(guide) {
     if (guide.fileType === 'pdf') {
         newWindow.document.write(`
             <html>
-                <head><title>${escapeHtml(guide.name)}</title></head>
+                <head>
+                    <title>${escapeHtml(guide.name)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        .mobile-back-button {
+                            display: none;
+                        }
+                        @media (max-width: 768px) {
+                            .mobile-back-button {
+                                display: block;
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                z-index: 10001;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 12px 20px;
+                                font-size: 1em;
+                                font-weight: 600;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                                text-align: left;
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            }
+                            .mobile-back-button:active {
+                                background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                            }
+                            embed {
+                                top: 50px !important;
+                                height: calc(100vh - 50px) !important;
+                            }
+                        }
+                    </style>
+                </head>
                 <body style="margin:0;padding:0;">
+                    <button class="mobile-back-button" onclick="window.close();" aria-label="Go back">← Back</button>
                     <embed src="${guide.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
                 </body>
             </html>
@@ -2724,8 +2835,44 @@ function viewHandout(index) {
         // For PDFs, embed directly
         newWindow.document.write(`
             <html>
-                <head><title>${escapeHtml(handout.name)}</title></head>
+                <head>
+                    <title>${escapeHtml(handout.name)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        .mobile-back-button {
+                            display: none;
+                        }
+                        @media (max-width: 768px) {
+                            .mobile-back-button {
+                                display: block;
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                z-index: 10001;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 12px 20px;
+                                font-size: 1em;
+                                font-weight: 600;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                                text-align: left;
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            }
+                            .mobile-back-button:active {
+                                background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                            }
+                            embed {
+                                top: 50px !important;
+                                height: calc(100vh - 50px) !important;
+                            }
+                        }
+                    </style>
+                </head>
                 <body style="margin:0;padding:0;">
+                    <button class="mobile-back-button" onclick="window.close();" aria-label="Go back">← Back</button>
                     <embed src="${handout.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
                 </body>
             </html>
@@ -3001,8 +3148,44 @@ function openFormWindow(form) {
         // For PDFs, embed directly
         newWindow.document.write(`
             <html>
-                <head><title>${escapeHtml(form.name)}</title></head>
+                <head>
+                    <title>${escapeHtml(form.name)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        .mobile-back-button {
+                            display: none;
+                        }
+                        @media (max-width: 768px) {
+                            .mobile-back-button {
+                                display: block;
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                z-index: 10001;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                border: none;
+                                padding: 12px 20px;
+                                font-size: 1em;
+                                font-weight: 600;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                                text-align: left;
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            }
+                            .mobile-back-button:active {
+                                background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                            }
+                            embed {
+                                top: 50px !important;
+                                height: calc(100vh - 50px) !important;
+                            }
+                        }
+                    </style>
+                </head>
                 <body style="margin:0;padding:0;">
+                    <button class="mobile-back-button" onclick="window.close();" aria-label="Go back">← Back</button>
                     <embed src="${form.url}" type="application/pdf" width="100%" height="100%" style="position:absolute;top:0;left:0;width:100%;height:100vh;" />
                 </body>
             </html>
