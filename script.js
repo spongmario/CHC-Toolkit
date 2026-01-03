@@ -1521,27 +1521,29 @@ function viewPathway(index) {
                             .mobile-back-button {
                                 display: block;
                                 position: fixed;
-                                top: ${backButtonTop};
-                                left: 0;
-                                right: 0;
+                                top: ${relatedBanner ? '60px' : '10px'};
+                                left: 10px;
                                 z-index: 10001;
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                 color: white;
                                 border: none;
-                                padding: 12px 20px;
-                                font-size: 1em;
+                                padding: 10px 18px;
+                                font-size: 0.95em;
                                 font-weight: 600;
                                 cursor: pointer;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                                text-align: left;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                                border-radius: 8px;
                                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                transition: all 0.2s ease;
                             }
                             .mobile-back-button:active {
                                 background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                                transform: scale(0.98);
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                             }
                             embed {
-                                top: ${relatedBanner ? '100px' : '50px'} !important;
-                                height: ${relatedBanner ? 'calc(100vh - 100px)' : 'calc(100vh - 50px)'} !important;
+                                top: ${relatedBanner ? '50px' : '0'} !important;
+                                height: ${relatedBanner ? 'calc(100vh - 50px)' : '100vh'} !important;
                             }
                         }
                     </style>
@@ -1611,27 +1613,29 @@ function viewPathwayByUrl(url, name) {
                         .mobile-back-button {
                             display: block;
                             position: fixed;
-                            top: 0;
-                            left: 0;
-                            right: 0;
+                            top: 10px;
+                            left: 10px;
                             z-index: 10001;
                             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                             color: white;
                             border: none;
-                            padding: 12px 20px;
-                            font-size: 1em;
+                            padding: 10px 18px;
+                            font-size: 0.95em;
                             font-weight: 600;
                             cursor: pointer;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                            text-align: left;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                            border-radius: 8px;
                             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            transition: all 0.2s ease;
                         }
                         .mobile-back-button:active {
                             background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                            transform: scale(0.98);
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                         }
                         embed {
-                            top: 50px !important;
-                            height: calc(100vh - 50px) !important;
+                            top: 0 !important;
+                            height: 100vh !important;
                         }
                     }
                 </style>
@@ -2302,27 +2306,29 @@ function openPTGuideWindow(guide) {
                             .mobile-back-button {
                                 display: block;
                                 position: fixed;
-                                top: 0;
-                                left: 0;
-                                right: 0;
+                                top: 10px;
+                                left: 10px;
                                 z-index: 10001;
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                 color: white;
                                 border: none;
-                                padding: 12px 20px;
-                                font-size: 1em;
+                                padding: 10px 18px;
+                                font-size: 0.95em;
                                 font-weight: 600;
                                 cursor: pointer;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                                text-align: left;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                                border-radius: 8px;
                                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                transition: all 0.2s ease;
                             }
                             .mobile-back-button:active {
                                 background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                                transform: scale(0.98);
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                             }
                             embed {
-                                top: 50px !important;
-                                height: calc(100vh - 50px) !important;
+                                top: 0 !important;
+                                height: 100vh !important;
                             }
                         }
                     </style>
@@ -2846,27 +2852,29 @@ function viewHandout(index) {
                             .mobile-back-button {
                                 display: block;
                                 position: fixed;
-                                top: 0;
-                                left: 0;
-                                right: 0;
+                                top: 10px;
+                                left: 10px;
                                 z-index: 10001;
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                 color: white;
                                 border: none;
-                                padding: 12px 20px;
-                                font-size: 1em;
+                                padding: 10px 18px;
+                                font-size: 0.95em;
                                 font-weight: 600;
                                 cursor: pointer;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                                text-align: left;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                                border-radius: 8px;
                                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                transition: all 0.2s ease;
                             }
                             .mobile-back-button:active {
                                 background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                                transform: scale(0.98);
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                             }
                             embed {
-                                top: 50px !important;
-                                height: calc(100vh - 50px) !important;
+                                top: 0 !important;
+                                height: 100vh !important;
                             }
                         }
                     </style>
@@ -3159,27 +3167,29 @@ function openFormWindow(form) {
                             .mobile-back-button {
                                 display: block;
                                 position: fixed;
-                                top: 0;
-                                left: 0;
-                                right: 0;
+                                top: 10px;
+                                left: 10px;
                                 z-index: 10001;
                                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                                 color: white;
                                 border: none;
-                                padding: 12px 20px;
-                                font-size: 1em;
+                                padding: 10px 18px;
+                                font-size: 0.95em;
                                 font-weight: 600;
                                 cursor: pointer;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                                text-align: left;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                                border-radius: 8px;
                                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                transition: all 0.2s ease;
                             }
                             .mobile-back-button:active {
                                 background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
+                                transform: scale(0.98);
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                             }
                             embed {
-                                top: 50px !important;
-                                height: calc(100vh - 50px) !important;
+                                top: 0 !important;
+                                height: 100vh !important;
                             }
                         }
                     </style>
