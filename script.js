@@ -3354,6 +3354,7 @@ function initializeDosingCalculator() {
     const resultBox = document.getElementById('dosingResult');
     const resultValue = document.getElementById('dosingResultValue');
     const resultBreakdown = document.getElementById('dosingBreakdown');
+    const dosingMainResult = document.getElementById('dosingMainResult');
     const maxDoseTypeNone = document.getElementById('maxDoseTypeNone');
     const maxDoseTypeDaily = document.getElementById('maxDoseTypeDaily');
     const maxDoseTypePerDose = document.getElementById('maxDoseTypePerDose');
@@ -3600,9 +3601,15 @@ function initializeDosingCalculator() {
         // Helper function to add limit note to breakdown
         function addLimitNote(html) {
             if (maxDailyLimitApplied && maxDoseType === 'daily') {
-                html += `<div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-style: italic; color: rgba(255,255,255,0.9);">⚠️ Limited by max daily dose: ${maxDoseMg} mg/day</div>`;
+                html += `<div class="breakdown-card" style="background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.4);">
+                    <div class="breakdown-card-title">⚠️ Limit Applied</div>
+                    <div class="breakdown-card-content" style="font-style: italic;">Limited by max daily dose: ${maxDoseMg} mg/day</div>
+                </div>`;
             } else if (maxPerDoseLimitApplied && maxDoseType === 'perDose') {
-                html += `<div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-style: italic; color: rgba(255,255,255,0.9);">⚠️ Limited by max per dose: ${maxDoseMg} mg</div>`;
+                html += `<div class="breakdown-card" style="background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.4);">
+                    <div class="breakdown-card-title">⚠️ Limit Applied</div>
+                    <div class="breakdown-card-content" style="font-style: italic;">Limited by max per dose: ${maxDoseMg} mg</div>
+                </div>`;
             }
             return html;
         }
@@ -3636,9 +3643,11 @@ function initializeDosingCalculator() {
             const maxDisplay = maxMl !== null ? maxMl.toFixed(1) : '';
             const rangeInfo = minMl !== null && maxMl !== null ? ` data-min="${minMl}" data-max="${maxMl}"` : '';
             
-            html += `<div class="breakdown-item" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid rgba(255,255,255,0.4); font-weight: 600; font-size: 1.05em;">Prescription Script:</div>`;
-            html += `<div class="breakdown-item" style="margin-bottom: 12px; font-size: 1.1em; letter-spacing: 0.3px;">Take <input type="text" class="editable-dose-input" value="${scriptDoseDisplay}" data-original="${doseMlFormatted}"${rangeInfo} style="width: 45px; text-align: center; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 4px; color: white; font-size: 1em; font-weight: 600; margin: 0 4px;" /> mL by mouth ${frequencyText} x ${Math.round(days)} ${days === 1 ? 'day' : 'days'}</div>`;
-            html += `<div class="breakdown-item" style="font-weight: 600; color: rgba(255,255,255,0.95);">Bottle Size: <span class="bottle-size-value">${totalMl.toFixed(1)}</span> mL</div>`;
+            html += `<div class="breakdown-card">
+                <div class="breakdown-card-title">Prescription Script</div>
+                <div class="breakdown-card-content" style="font-size: 1.05em; letter-spacing: 0.3px;">Take <input type="text" class="editable-dose-input" value="${scriptDoseDisplay}" data-original="${doseMlFormatted}"${rangeInfo} style="width: 45px; text-align: center; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 4px; color: white; font-size: 1em; font-weight: 600; margin: 0 4px;" /> mL by mouth ${frequencyText} x ${Math.round(days)} ${days === 1 ? 'day' : 'days'}</div>
+                <div class="breakdown-card-content" style="margin-top: 8px; font-size: 0.9em; opacity: 0.85; font-weight: 500;">Bottle Size: <span class="bottle-size-value">${totalMl.toFixed(1)}</span> mL</div>
+            </div>`;
             
             return html;
         }
@@ -3672,20 +3681,31 @@ function initializeDosingCalculator() {
                     if (optimizedDose && optimizedDose.ml !== null) {
                         resultText = `${optimizedDose.ml.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
-                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDose.ml.toFixed(1)} mL (${Math.round(optimizedDose.mg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Min: ${perDoseMinMl.toFixed(1)} mL (${Math.round(perDoseMinMg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                            <div class="breakdown-card" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <div class="breakdown-card-title" style="font-size: 1.1em; font-weight: 700; margin-bottom: 8px;">Recommended Dose</div>
+                                <div class="breakdown-card-content" style="font-size: 1.15em; font-weight: 600;">${optimizedDose.ml.toFixed(1)} mL (${Math.round(optimizedDose.mg)} mg) every ${frequencyHours} hours</div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-card-title">Range</div>
+                                <div class="breakdown-card-content">
+                                    <div style="margin-bottom: 6px;">Min: ${perDoseMinMl.toFixed(1)} mL (${Math.round(perDoseMinMg)} mg) every ${frequencyHours} hours</div>
+                                    <div style="margin-bottom: 6px;">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
+                                    <div style="margin-top: 8px; font-weight: 600;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                                </div>
+                            </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDose.ml, frequencyText, prescriptionDays, perDoseMinMl, perDoseMaxMl);
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
-                            <div class="breakdown-item">${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-card-title">Dose Range</div>
+                                <div class="breakdown-card-content">
+                                    <div style="margin-bottom: 6px;">${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
+                                    <div style="font-weight: 600;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                                </div>
+                            </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // Use average of min and max for prescription script
@@ -3697,12 +3717,18 @@ function initializeDosingCalculator() {
                     if (optimizedDose && optimizedDose.mg !== null) {
                         resultText = `${optimizedDose.mg} mg ${frequencyText}`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
-                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDose.mg} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Min: ${Math.round(perDoseMinMg)} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
-                            <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                            <div class="breakdown-card" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <div class="breakdown-card-title" style="font-size: 1.1em; font-weight: 700; margin-bottom: 8px;">Recommended Dose</div>
+                                <div class="breakdown-card-content" style="font-size: 1.15em; font-weight: 600;">${optimizedDose.mg} mg every ${frequencyHours} hours</div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-card-title">Range</div>
+                                <div class="breakdown-card-content">
+                                    <div style="margin-bottom: 6px;">Min: ${Math.round(perDoseMinMg)} mg every ${frequencyHours} hours</div>
+                                    <div style="margin-bottom: 6px;">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
+                                    <div style="margin-top: 8px; font-weight: 600;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
+                                </div>
+                            </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // If we have concentration, calculate mL for prescription
@@ -3735,14 +3761,13 @@ function initializeDosingCalculator() {
                 
                 if (perDoseMl !== null) {
                     resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
-                    breakdownHTML = `
-                        <div class="breakdown-item">${Math.round(perDoseMg)} mg every ${frequencyHours} hours</div>
-                        <div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>
-                    `;
+                    // For single values, add total daily to the main result card, no breakdown card needed
+                    breakdownHTML = '';
                     breakdownHTML = addLimitNote(breakdownHTML);
                     breakdownHTML = addPrescriptionScript(breakdownHTML, perDoseMl, frequencyText, prescriptionDays);
                 } else {
                     resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
+                    breakdownHTML = '';
                     if (maxDailyLimitApplied || maxPerDoseLimitApplied) {
                         breakdownHTML = addLimitNote('');
                     }
@@ -3759,11 +3784,17 @@ function initializeDosingCalculator() {
                     if (optimizedDaily && optimizedDaily.ml !== null) {
                         resultText = `${optimizedDaily.ml.toFixed(1)} mL once daily`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
-                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDaily.ml.toFixed(1)} mL (${Math.round(optimizedDaily.mg)} mg) once daily</div>
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
+                            <div class="breakdown-card" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <div class="breakdown-card-title" style="font-size: 1.1em; font-weight: 700; margin-bottom: 8px;">Recommended Dose</div>
+                                <div class="breakdown-card-content" style="font-size: 1.15em; font-weight: 600;">${optimizedDaily.ml.toFixed(1)} mL (${Math.round(optimizedDaily.mg)} mg) once daily</div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-card-title">Range</div>
+                                <div class="breakdown-card-content">
+                                    <div style="margin-bottom: 6px;">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
+                                    <div>Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
+                                </div>
+                            </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDaily.ml, 'once daily', prescriptionDays, dailyTotalMinMl, dailyTotalMaxMl);
@@ -3780,11 +3811,17 @@ function initializeDosingCalculator() {
                     if (optimizedDaily && optimizedDaily.mg !== null) {
                         resultText = `${optimizedDaily.mg} mg once daily`;
                         breakdownHTML = `
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px;">Optimized Dose:</div>
-                            <div class="breakdown-item" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3);">${optimizedDaily.mg} mg once daily</div>
-                            <div class="breakdown-item" style="font-weight: 600; margin-bottom: 4px; margin-top: 12px;">Range:</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
-                            <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
+                            <div class="breakdown-card" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);">
+                                <div class="breakdown-card-title" style="font-size: 1.1em; font-weight: 700; margin-bottom: 8px;">Recommended Dose</div>
+                                <div class="breakdown-card-content" style="font-size: 1.15em; font-weight: 600;">${optimizedDaily.mg} mg once daily</div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-card-title">Range</div>
+                                <div class="breakdown-card-content">
+                                    <div style="margin-bottom: 6px;">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
+                                    <div>Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
+                                </div>
+                            </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // If we have concentration, calculate mL for prescription
@@ -3816,11 +3853,13 @@ function initializeDosingCalculator() {
                 if (concentration && concentration > 0) {
                     const dailyTotalMl = dailyTotalMg / concentration;
                     resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
-                    breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>`;
+                    // For single values, no breakdown card needed - total daily will be in main card
+                    breakdownHTML = '';
                     breakdownHTML = addLimitNote(breakdownHTML);
                     breakdownHTML = addPrescriptionScript(breakdownHTML, dailyTotalMl, 'once daily', prescriptionDays);
                 } else {
                     resultText = `${Math.round(dailyTotalMg)} mg once daily`;
+                    breakdownHTML = '';
                     if (maxDailyLimitApplied) {
                         breakdownHTML = addLimitNote('');
                     }
@@ -3831,6 +3870,58 @@ function initializeDosingCalculator() {
         resultValue.textContent = resultText;
         resultBreakdown.innerHTML = breakdownHTML;
         resultBox.style.display = 'block';
+        
+        // Hide main dose card if there's a range (optimized and range cards show the info)
+        // For single values, add total daily info to the main card
+        if (dosingMainResult) {
+            if (doseRange && doseRange.isRange && !treatAsSingleValue && !treatDailyAsSingle) {
+                dosingMainResult.style.display = 'none';
+                // Remove any breakdown from main card when hidden
+                const existingBreakdown = dosingMainResult.querySelector('.dosing-main-breakdown');
+                if (existingBreakdown) {
+                    existingBreakdown.remove();
+                }
+            } else {
+                dosingMainResult.style.display = 'block';
+                
+                // For single values, add total daily information to the main card
+                const isSingleValue = !doseRange.isRange || treatAsSingleValue || treatDailyAsSingle;
+                if (isSingleValue) {
+                    // Calculate total daily - use the values we calculated earlier
+                    let totalDailyMg = null;
+                    if (frequencyHours && perDoseMinMg !== null && perDoseMinMg !== undefined) {
+                        const dosesPerDay = 24 / frequencyHours;
+                        totalDailyMg = perDoseMinMg * dosesPerDay;
+                    } else if (dailyTotalMinMg !== null && dailyTotalMinMg !== undefined) {
+                        totalDailyMg = dailyTotalMinMg;
+                    }
+                    
+                    // Add total daily to main card if we have it
+                    if (totalDailyMg !== null && totalDailyMg !== undefined) {
+                        let existingBreakdown = dosingMainResult.querySelector('.dosing-main-breakdown');
+                        if (!existingBreakdown) {
+                            existingBreakdown = document.createElement('div');
+                            existingBreakdown.className = 'dosing-main-breakdown';
+                            existingBreakdown.style.cssText = 'margin-top: 12px; font-size: 0.95em; opacity: 0.9; font-weight: 500;';
+                            resultValue.parentNode.appendChild(existingBreakdown);
+                        }
+                        existingBreakdown.textContent = `Total Daily: ${Math.round(totalDailyMg)} mg`;
+                    } else {
+                        // Remove breakdown if we don't have total daily
+                        const existingBreakdown = dosingMainResult.querySelector('.dosing-main-breakdown');
+                        if (existingBreakdown) {
+                            existingBreakdown.remove();
+                        }
+                    }
+                } else {
+                    // Remove breakdown if it exists (for ranges)
+                    const existingBreakdown = dosingMainResult.querySelector('.dosing-main-breakdown');
+                    if (existingBreakdown) {
+                        existingBreakdown.remove();
+                    }
+                }
+            }
+        }
         
         // Attach event listeners to editable dose inputs
         attachEditableDoseListeners();

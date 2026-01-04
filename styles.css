@@ -1976,6 +1976,37 @@ html {
     margin-bottom: 0 !important;
 }
 
+.dosing-results-wrapper {
+    margin-top: var(--spacing-2xl);
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.dosing-results-container {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    animation: fadeIn 0.5s ease;
+}
+
+.dosing-main-result {
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    color: white;
+    text-align: center;
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .dosing-result-box {
     margin-top: var(--spacing-2xl);
     padding: var(--spacing-2xl);
@@ -1995,12 +2026,12 @@ html {
 
 .dosing-result-title {
     color: #ffffff !important;
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--spacing-md);
     margin-top: 0;
     border: none;
     padding: 0;
     text-align: center;
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: 600;
     letter-spacing: 0.2px;
     opacity: 1;
@@ -2012,9 +2043,9 @@ html {
 }
 
 .dosing-result-value {
-    font-size: 2.5em;
+    font-size: 2em;
     font-weight: 700;
-    margin: var(--spacing-xl) 0;
+    margin: var(--spacing-md) 0 0 0;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
     letter-spacing: -1px;
@@ -2023,6 +2054,45 @@ html {
 
 .dosing-result-value:hover {
     transform: scale(1.02);
+}
+
+.dosing-breakdown-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    width: 100%;
+}
+
+.breakdown-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    color: white;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: var(--transition);
+    animation: fadeIn 0.4s ease;
+}
+
+.breakdown-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.breakdown-card-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: var(--spacing-sm);
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.breakdown-card-content {
+    font-size: 1em;
+    line-height: 1.6;
+    color: white;
 }
 
 .dosing-breakdown {
