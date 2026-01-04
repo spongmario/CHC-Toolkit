@@ -3354,6 +3354,11 @@ function initializeDosingCalculator() {
     const resultBox = document.getElementById('dosingResult');
     const resultValue = document.getElementById('dosingResultValue');
     const resultBreakdown = document.getElementById('dosingBreakdown');
+    const maxDoseTypeNone = document.getElementById('maxDoseTypeNone');
+    const maxDoseTypeDaily = document.getElementById('maxDoseTypeDaily');
+    const maxDoseTypePerDose = document.getElementById('maxDoseTypePerDose');
+    const maxDoseInputContainer = document.getElementById('maxDoseInputContainer');
+    const maxDoseValue = document.getElementById('maxDoseValue');
     
     function getFrequencyLabel(hours) {
         const labels = {
@@ -3514,6 +3519,13 @@ function initializeDosingCalculator() {
         const concentration = parseConcentration(concentrationInput.value);
         const frequencyHours = frequencyInput ? parseFloat(frequencyInput.value) : null;
         
+        // Get max dose settings
+        const maxDoseType = maxDoseTypeNone && maxDoseTypeNone.checked ? 'none' :
+                           (maxDoseTypeDaily && maxDoseTypeDaily.checked ? 'daily' :
+                           (maxDoseTypePerDose && maxDoseTypePerDose.checked ? 'perDose' : 'none'));
+        const maxDoseValueInput = maxDoseValue ? parseFloat(maxDoseValue.value) : null;
+        const maxDoseMg = (!isNaN(maxDoseValueInput) && maxDoseValueInput > 0) ? maxDoseValueInput : null;
+        
         // Only require weight and dose per kg (concentration is optional)
         if (!weightInputValue || !doseRange || weightInputValue <= 0 || doseRange.min <= 0) {
             resultBox.style.display = 'none';
@@ -3524,8 +3536,21 @@ function initializeDosingCalculator() {
         const weightInKg = weightUnit === 'lbs' ? weightInputValue / 2.20462 : weightInputValue;
         
         // Calculate daily total doses in mg for min, max, and optimized
-        const dailyTotalMinMg = weightInKg * doseRange.min;
-        const dailyTotalMaxMg = weightInKg * doseRange.max;
+        let dailyTotalMinMg = weightInKg * doseRange.min;
+        let dailyTotalMaxMg = weightInKg * doseRange.max;
+        
+        // Apply max daily limit if specified
+        let maxDailyLimitApplied = false;
+        if (maxDoseType === 'daily' && maxDoseMg !== null) {
+            if (dailyTotalMinMg > maxDoseMg) {
+                dailyTotalMinMg = maxDoseMg;
+                maxDailyLimitApplied = true;
+            }
+            if (dailyTotalMaxMg > maxDoseMg) {
+                dailyTotalMaxMg = maxDoseMg;
+                maxDailyLimitApplied = true;
+            }
+        }
         
         // Calculate per dose if frequency is provided
         let perDoseMinMg = null;
@@ -3533,11 +3558,27 @@ function initializeDosingCalculator() {
         let perDoseMinMl = null;
         let perDoseMaxMl = null;
         let optimizedDose = null;
+        let maxPerDoseLimitApplied = false;
         
         if (frequencyHours && frequencyHours > 0) {
             const dosesPerDay = 24 / frequencyHours;
             perDoseMinMg = dailyTotalMinMg / dosesPerDay;
             perDoseMaxMg = dailyTotalMaxMg / dosesPerDay;
+            
+            // Apply max per dose limit if specified
+            if (maxDoseType === 'perDose' && maxDoseMg !== null) {
+                if (perDoseMinMg > maxDoseMg) {
+                    perDoseMinMg = maxDoseMg;
+                    maxPerDoseLimitApplied = true;
+                }
+                if (perDoseMaxMg > maxDoseMg) {
+                    perDoseMaxMg = maxDoseMg;
+                    maxPerDoseLimitApplied = true;
+                }
+                // Recalculate daily totals based on capped per dose
+                dailyTotalMinMg = perDoseMinMg * dosesPerDay;
+                dailyTotalMaxMg = perDoseMaxMg * dosesPerDay;
+            }
             
             if (concentration && concentration > 0) {
                 perDoseMinMl = perDoseMinMg / concentration;
@@ -3551,14 +3592,39 @@ function initializeDosingCalculator() {
             }
         }
         
+        // Helper function to add limit note to breakdown
+        function addLimitNote(html) {
+            if (maxDailyLimitApplied && maxDoseType === 'daily') {
+                html += `<div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-style: italic; color: rgba(255,255,255,0.9);">⚠️ Limited by max daily dose: ${maxDoseMg} mg/day</div>`;
+            } else if (maxPerDoseLimitApplied && maxDoseType === 'perDose') {
+                html += `<div class="breakdown-item" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3); font-style: italic; color: rgba(255,255,255,0.9);">⚠️ Limited by max per dose: ${maxDoseMg} mg</div>`;
+            }
+            return html;
+        }
+        
         // Build prescription-like output
         let resultText = '';
         let breakdownHTML = '';
         
+        // Check if limit was applied and values are now equal (treat range as single value)
+        const limitApplied = maxDailyLimitApplied || maxPerDoseLimitApplied;
+        let treatAsSingleValue = false;
+        let treatDailyAsSingle = false;
+        
+        if (limitApplied && doseRange.isRange) {
+            if (frequencyHours && perDoseMinMg !== null && perDoseMaxMg !== null) {
+                // Check if per dose values are equal (within 0.01 mg tolerance)
+                treatAsSingleValue = Math.abs(perDoseMinMg - perDoseMaxMg) < 0.01;
+            } else if (!frequencyHours) {
+                // Check if daily values are equal (within 0.01 mg tolerance)
+                treatDailyAsSingle = Math.abs(dailyTotalMinMg - dailyTotalMaxMg) < 0.01;
+            }
+        }
+        
         if (frequencyHours && perDoseMinMg !== null) {
             const frequencyText = getPrescriptionFrequency(frequencyHours);
             
-            if (doseRange.isRange) {
+            if (doseRange.isRange && !treatAsSingleValue) {
                 // Show range with optimized dose
                 if (perDoseMinMl !== null) {
                     // Liquid with range
@@ -3572,12 +3638,14 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${perDoseMaxMl.toFixed(1)} mL (${Math.round(perDoseMaxMg)} mg) every ${frequencyHours} hours</div>
                             <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
                             <div class="breakdown-item">${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
                             <div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>
                         `;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     }
                 } else {
                     // mg only with range
@@ -3591,29 +3659,37 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(perDoseMaxMg)} mg every ${frequencyHours} hours</div>
                             <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     } else {
                         resultText = `${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg ${frequencyText}`;
                         breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     }
                 }
             } else {
-                // Single value (not a range)
-                const perDoseMg = perDoseMinMg;
+                // Single value (not a range, or range treated as single due to limit)
+                const perDoseMg = perDoseMinMg; // Use min (they're equal when treatAsSingleValue is true)
                 const perDoseMl = perDoseMinMl;
+                // When treatAsSingleValue is true, daily totals should also be equal
+                const dailyTotalMg = treatAsSingleValue ? dailyTotalMinMg : dailyTotalMinMg;
                 
                 if (perDoseMl !== null) {
                     resultText = `${perDoseMl.toFixed(1)} mL ${frequencyText}`;
                     breakdownHTML = `
                         <div class="breakdown-item">${Math.round(perDoseMg)} mg every ${frequencyHours} hours</div>
-                        <div class="breakdown-item">${Math.round(dailyTotalMinMg)} mg per day</div>
+                        <div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>
                     `;
+                    breakdownHTML = addLimitNote(breakdownHTML);
                 } else {
                     resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
+                    if (maxDailyLimitApplied || maxPerDoseLimitApplied) {
+                        breakdownHTML = addLimitNote('');
+                    }
                 }
             }
         } else {
             // Show daily total (no frequency)
-            if (doseRange.isRange) {
+            if (doseRange.isRange && !treatDailyAsSingle) {
                 if (concentration && concentration > 0) {
                     const dailyTotalMinMl = dailyTotalMinMg / concentration;
                     const dailyTotalMaxMl = dailyTotalMaxMg / concentration;
@@ -3628,9 +3704,11 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Min: ${dailyTotalMinMl.toFixed(1)} mL (${Math.round(dailyTotalMinMg)} mg) per day</div>
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
                         `;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     } else {
                         resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
                         breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     }
                 } else {
                     const optimizedDaily = calculateOptimizedDose(dailyTotalMinMg, dailyTotalMaxMg, null, null);
@@ -3643,18 +3721,28 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Min: ${Math.round(dailyTotalMinMg)} mg per day</div>
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
                         `;
+                        breakdownHTML = addLimitNote(breakdownHTML);
                     } else {
                         resultText = `${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg once daily`;
+                        if (maxDailyLimitApplied) {
+                            breakdownHTML = addLimitNote('');
+                        }
                     }
                 }
             } else {
-                // Single value, no frequency
+                // Single value, no frequency (or range treated as single due to limit)
+                const dailyTotalMg = treatDailyAsSingle ? dailyTotalMinMg : dailyTotalMinMg;
+                
                 if (concentration && concentration > 0) {
-                    const dailyTotalMl = dailyTotalMinMg / concentration;
+                    const dailyTotalMl = dailyTotalMg / concentration;
                     resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
-                    breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)} mg per day</div>`;
+                    breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>`;
+                    breakdownHTML = addLimitNote(breakdownHTML);
                 } else {
-                    resultText = `${Math.round(dailyTotalMinMg)} mg once daily`;
+                    resultText = `${Math.round(dailyTotalMg)} mg once daily`;
+                    if (maxDailyLimitApplied) {
+                        breakdownHTML = addLimitNote('');
+                    }
                 }
             }
         }
@@ -3709,6 +3797,35 @@ function initializeDosingCalculator() {
         });
     }
     
+    // Update max dose button styles when radio buttons change
+    function updateMaxDoseButtonStyles() {
+        const maxDoseLabels = document.querySelectorAll('.max-dose-radio-label');
+        maxDoseLabels.forEach(label => {
+            const radio = label.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+                label.classList.add('checked');
+            } else {
+                label.classList.remove('checked');
+            }
+        });
+    }
+    
+    // Handle max dose type changes
+    function handleMaxDoseTypeChange() {
+        if (maxDoseTypeNone && maxDoseTypeNone.checked) {
+            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'none';
+            if (maxDoseValue) maxDoseValue.value = '';
+        } else if (maxDoseTypeDaily && maxDoseTypeDaily.checked) {
+            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'block';
+            if (maxDoseValue) maxDoseValue.placeholder = 'Enter max daily dose';
+        } else if (maxDoseTypePerDose && maxDoseTypePerDose.checked) {
+            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'block';
+            if (maxDoseValue) maxDoseValue.placeholder = 'Enter max per dose';
+        }
+        updateMaxDoseButtonStyles();
+        calculateDose();
+    }
+    
     // Add event listeners
     if (weightInput) {
         weightInput.addEventListener('input', calculateDose);
@@ -3742,8 +3859,24 @@ function initializeDosingCalculator() {
         frequencyInput.addEventListener('change', calculateDose);
     }
     
+    // Max dose event listeners
+    if (maxDoseTypeNone) {
+        maxDoseTypeNone.addEventListener('change', handleMaxDoseTypeChange);
+    }
+    if (maxDoseTypeDaily) {
+        maxDoseTypeDaily.addEventListener('change', handleMaxDoseTypeChange);
+    }
+    if (maxDoseTypePerDose) {
+        maxDoseTypePerDose.addEventListener('change', handleMaxDoseTypeChange);
+    }
+    if (maxDoseValue) {
+        maxDoseValue.addEventListener('input', calculateDose);
+    }
+    
     // Initialize button styles
     updateUnitButtonStyles();
+    updateMaxDoseButtonStyles();
+    handleMaxDoseTypeChange(); // Initialize the max dose input visibility
 }
 
 // Make showDosingCalculator available globally

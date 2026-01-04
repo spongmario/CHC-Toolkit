@@ -1827,6 +1827,88 @@ html {
     font-style: italic;
 }
 
+.max-dose-toggle {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    background: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: var(--radius-md);
+}
+
+.max-dose-radio-label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.95em;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius);
+    transition: var(--transition);
+    user-select: none;
+    background: transparent;
+    margin: 0 !important;
+    flex: 1;
+}
+
+.max-dose-radio-label:hover {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-primary);
+}
+
+.max-dose-radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.max-dose-button-text {
+    display: block;
+    transition: var(--transition);
+    pointer-events: none;
+    width: 100%;
+    text-align: center;
+}
+
+.max-dose-radio-label:has(input[type="radio"]:checked) {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #ffffff;
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+.max-dose-radio-label:has(input[type="radio"]:checked) .max-dose-button-text {
+    color: #ffffff;
+}
+
+.max-dose-radio-label:has(input[type="radio"]:checked):hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #0369a1 100%);
+    box-shadow: var(--shadow-md);
+}
+
+.max-dose-radio-label.checked {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #ffffff;
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+.max-dose-radio-label.checked .max-dose-button-text {
+    color: #ffffff;
+}
+
+.max-dose-radio-label.checked:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #0369a1 100%);
+    box-shadow: var(--shadow-md);
+}
+
 .dosing-result-box {
     margin-top: var(--spacing-2xl);
     padding: var(--spacing-2xl);
