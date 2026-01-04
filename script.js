@@ -4113,11 +4113,28 @@ function initializeDosingCalculator() {
     if (weightInput) {
         weightInput.addEventListener('input', calculateDose);
     }
+    // Update weight unit selector slider position
+    function updateWeightUnitSlider() {
+        const weightUnitSelector = document.querySelector('.weight-unit-selector');
+        if (weightUnitSelector) {
+            weightUnitSelector.classList.remove('weight-unit-kg', 'weight-unit-lbs');
+            if (weightUnitKg && weightUnitKg.checked) {
+                weightUnitSelector.classList.add('weight-unit-kg');
+            } else if (weightUnitLbs && weightUnitLbs.checked) {
+                weightUnitSelector.classList.add('weight-unit-lbs');
+            }
+        }
+    }
+    
+    // Initialize weight unit slider
+    updateWeightUnitSlider();
+    
     if (weightUnitKg) {
         weightUnitKg.addEventListener('change', () => {
             convertWeightOnUnitChange('kg');
             updateUnitButtonStyles();
             updateWeightPlaceholder();
+            updateWeightUnitSlider();
             calculateDose();
         });
     }
@@ -4126,6 +4143,7 @@ function initializeDosingCalculator() {
             convertWeightOnUnitChange('lbs');
             updateUnitButtonStyles();
             updateWeightPlaceholder();
+            updateWeightUnitSlider();
             calculateDose();
         });
     }

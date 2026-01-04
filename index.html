@@ -360,6 +360,7 @@
                                         <span class="weight-unit-display" id="weightUnitDisplay">kg</span>
                                     </div>
                                     <div class="weight-unit-selector">
+                                        <div class="weight-unit-slider"></div>
                                         <label class="unit-radio-label">
                                             <input type="radio" name="weightUnit" id="weightUnitKg" value="kg" checked tabindex="-1">
                                             <span class="unit-button-text">kg</span>
@@ -393,11 +394,11 @@
                                     <h3 class="optional-settings-title">Optional Settings</h3>
                                 </div>
                                 <div class="optional-settings-content">
-                                    <div class="form-group dosing-form-group">
-                                        <label for="medicationConcentration" class="dosing-label">
-                                            Liquid Concentration (mg/mL)
-                                        </label>
-                                        <input type="text" id="medicationConcentration" placeholder="e.g., 100/5" class="dosing-input">
+                            <div class="form-group dosing-form-group">
+                                <label for="medicationConcentration" class="dosing-label">
+                                    Liquid Concentration (mg/mL) 
+                                </label>
+                                <input type="text" id="medicationConcentration" placeholder="e.g., 100/5" class="dosing-input">
                                     </div>
                                     <div class="form-group dosing-form-group">
                                         <label class="dosing-label">Maximum Dose Limits</label>
@@ -437,8 +438,8 @@
                             <div id="dosingResult" class="dosing-results-wrapper" style="display: none;">
                                 <div class="dosing-results-container">
                                     <div class="dosing-main-result" id="dosingMainResult">
-                                        <h3 class="dosing-result-title">Dose</h3>
-                                        <div id="dosingResultValue" class="dosing-result-value">-</div>
+                                <h3 class="dosing-result-title">Dose</h3>
+                                <div id="dosingResultValue" class="dosing-result-value">-</div>
                                     </div>
                                     <div id="dosingBreakdown" class="dosing-breakdown-cards"></div>
                                 </div>
