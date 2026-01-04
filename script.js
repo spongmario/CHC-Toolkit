@@ -4095,15 +4095,36 @@ function initializeDosingCalculator() {
     
     // Handle max dose type changes
     function handleMaxDoseTypeChange() {
-        if (maxDoseTypeNone && maxDoseTypeNone.checked) {
-            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'none';
-            if (maxDoseValue) maxDoseValue.value = '';
-        } else if (maxDoseTypeDaily && maxDoseTypeDaily.checked) {
-            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'block';
-            if (maxDoseValue) maxDoseValue.placeholder = 'Enter max daily dose';
-        } else if (maxDoseTypePerDose && maxDoseTypePerDose.checked) {
-            if (maxDoseInputContainer) maxDoseInputContainer.style.display = 'block';
-            if (maxDoseValue) maxDoseValue.placeholder = 'Enter max per dose';
+        if (maxDoseInputContainer) {
+            if (maxDoseTypeNone && maxDoseTypeNone.checked) {
+                maxDoseInputContainer.classList.remove('show');
+                // Hide after animation completes
+                setTimeout(() => {
+                    if (maxDoseInputContainer && !maxDoseInputContainer.classList.contains('show')) {
+                        maxDoseInputContainer.style.display = 'none';
+                    }
+                }, 300);
+                if (maxDoseValue) maxDoseValue.value = '';
+            } else {
+                // Show the container first, then animate
+                if (maxDoseInputContainer.style.display === 'none') {
+                    maxDoseInputContainer.style.display = 'block';
+                    // Force reflow to ensure display change is applied
+                    void maxDoseInputContainer.offsetHeight;
+                }
+                // Add show class to trigger animation
+                requestAnimationFrame(() => {
+                    if (maxDoseInputContainer) {
+                        maxDoseInputContainer.classList.add('show');
+                    }
+                });
+                
+                if (maxDoseTypeDaily && maxDoseTypeDaily.checked) {
+                    if (maxDoseValue) maxDoseValue.placeholder = 'Enter max daily dose';
+                } else if (maxDoseTypePerDose && maxDoseTypePerDose.checked) {
+                    if (maxDoseValue) maxDoseValue.placeholder = 'Enter max per dose';
+                }
+            }
         }
         updateMaxDoseButtonStyles();
         calculateDose();

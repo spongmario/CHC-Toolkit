@@ -1845,6 +1845,20 @@ html {
     width: 100%;
 }
 
+#maxDoseInputContainer {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0;
+}
+
+#maxDoseInputContainer.show {
+    max-height: 100px;
+    opacity: 1;
+    margin-top: 12px;
+}
+
 .max-dose-toggle-switch {
     position: relative;
     display: flex;
