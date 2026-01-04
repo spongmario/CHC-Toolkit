@@ -3608,7 +3608,7 @@ function initializeDosingCalculator() {
         }
         
         // Helper function to generate prescription script and bottle size
-        function addPrescriptionScript(html, doseMl, frequencyText, days) {
+        function addPrescriptionScript(html, doseMl, frequencyText, days, minMl = null, maxMl = null) {
             if (!hasPrescriptionDays || !concentration || doseMl === null) {
                 return html;
             }
@@ -3632,11 +3632,13 @@ function initializeDosingCalculator() {
             
             // Generate prescription script - format display properly
             const scriptDoseDisplay = doseMlFormatted % 1 === 0 ? Math.round(doseMlFormatted).toString() : doseMlFormatted.toFixed(1);
-            const script = `Take ${scriptDoseDisplay}mL by mouth ${frequencyText} x ${Math.round(days)} ${days === 1 ? 'day' : 'days'}`;
+            const minDisplay = minMl !== null ? minMl.toFixed(1) : '';
+            const maxDisplay = maxMl !== null ? maxMl.toFixed(1) : '';
+            const rangeInfo = minMl !== null && maxMl !== null ? ` data-min="${minMl}" data-max="${maxMl}"` : '';
             
             html += `<div class="breakdown-item" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid rgba(255,255,255,0.4); font-weight: 600; font-size: 1.05em;">Prescription Script:</div>`;
-            html += `<div class="breakdown-item" style="margin-bottom: 12px; font-size: 1.1em; letter-spacing: 0.3px;">${script}</div>`;
-            html += `<div class="breakdown-item" style="font-weight: 600; color: rgba(255,255,255,0.95);">Bottle Size: ${totalMl.toFixed(1)} mL</div>`;
+            html += `<div class="breakdown-item" style="margin-bottom: 12px; font-size: 1.1em; letter-spacing: 0.3px;">Take <input type="text" class="editable-dose-input" value="${scriptDoseDisplay}" data-original="${doseMlFormatted}"${rangeInfo} style="width: 45px; text-align: center; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 4px; color: white; font-size: 1em; font-weight: 600; margin: 0 4px;" /> mL by mouth ${frequencyText} x ${Math.round(days)} ${days === 1 ? 'day' : 'days'}</div>`;
+            html += `<div class="breakdown-item" style="font-weight: 600; color: rgba(255,255,255,0.95);">Bottle Size: <span class="bottle-size-value">${totalMl.toFixed(1)}</span> mL</div>`;
             
             return html;
         }
@@ -3678,7 +3680,7 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
-                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDose.ml, frequencyText, prescriptionDays);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDose.ml, frequencyText, prescriptionDays, perDoseMinMl, perDoseMaxMl);
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
@@ -3688,7 +3690,7 @@ function initializeDosingCalculator() {
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // Use average of min and max for prescription script
                         const avgDoseMl = (perDoseMinMl + perDoseMaxMl) / 2;
-                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays, perDoseMinMl, perDoseMaxMl);
                     }
                 } else {
                     // mg only with range
@@ -3706,7 +3708,9 @@ function initializeDosingCalculator() {
                         // If we have concentration, calculate mL for prescription
                         if (concentration && concentration > 0) {
                             const optimizedDoseMl = optimizedDose.mg / concentration;
-                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDoseMl, frequencyText, prescriptionDays);
+                            const minMl = perDoseMinMg / concentration;
+                            const maxMl = perDoseMaxMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDoseMl, frequencyText, prescriptionDays, minMl, maxMl);
                         }
                     } else {
                         resultText = `${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg ${frequencyText}`;
@@ -3716,7 +3720,9 @@ function initializeDosingCalculator() {
                         if (concentration && concentration > 0) {
                             const avgDoseMg = (perDoseMinMg + perDoseMaxMg) / 2;
                             const avgDoseMl = avgDoseMg / concentration;
-                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays);
+                            const minMl = perDoseMinMg / concentration;
+                            const maxMl = perDoseMaxMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays, minMl, maxMl);
                         }
                     }
                 }
@@ -3760,14 +3766,14 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
-                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDaily.ml, 'once daily', prescriptionDays);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDaily.ml, 'once daily', prescriptionDays, dailyTotalMinMl, dailyTotalMaxMl);
                     } else {
                         resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
                         breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // Use average for prescription script
                         const avgDailyMl = (dailyTotalMinMl + dailyTotalMaxMl) / 2;
-                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays, dailyTotalMinMl, dailyTotalMaxMl);
                     }
                 } else {
                     const optimizedDaily = calculateOptimizedDose(dailyTotalMinMg, dailyTotalMaxMg, null, null);
@@ -3784,7 +3790,9 @@ function initializeDosingCalculator() {
                         // If we have concentration, calculate mL for prescription
                         if (concentration && concentration > 0) {
                             const optimizedDailyMl = optimizedDaily.mg / concentration;
-                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDailyMl, 'once daily', prescriptionDays);
+                            const minMl = dailyTotalMinMg / concentration;
+                            const maxMl = dailyTotalMaxMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDailyMl, 'once daily', prescriptionDays, minMl, maxMl);
                         }
                     } else {
                         resultText = `${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg once daily`;
@@ -3795,7 +3803,9 @@ function initializeDosingCalculator() {
                         if (concentration && concentration > 0) {
                             const avgDailyMg = (dailyTotalMinMg + dailyTotalMaxMg) / 2;
                             const avgDailyMl = avgDailyMg / concentration;
-                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays);
+                            const minMl = dailyTotalMinMg / concentration;
+                            const maxMl = dailyTotalMaxMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays, minMl, maxMl);
                         }
                     }
                 }
@@ -3821,6 +3831,103 @@ function initializeDosingCalculator() {
         resultValue.textContent = resultText;
         resultBreakdown.innerHTML = breakdownHTML;
         resultBox.style.display = 'block';
+        
+        // Attach event listeners to editable dose inputs
+        attachEditableDoseListeners();
+    }
+    
+    // Attach event listeners to editable dose inputs in the prescription script
+    function attachEditableDoseListeners() {
+        const editableInputs = resultBreakdown.querySelectorAll('.editable-dose-input');
+        editableInputs.forEach(input => {
+            // Remove existing listeners by cloning
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+            
+            // Live update as user types
+            newInput.addEventListener('input', function() {
+                updatePrescriptionFromEditableDose(newInput, true);
+            });
+            
+            newInput.addEventListener('blur', function() {
+                updatePrescriptionFromEditableDose(newInput, false);
+            });
+            
+            newInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    newInput.blur();
+                }
+            });
+        });
+    }
+    
+    // Update prescription script and bottle size when editable dose is changed
+    function updatePrescriptionFromEditableDose(input, isLiveUpdate) {
+        const inputValue = input.value.trim();
+        const originalValue = parseFloat(input.dataset.original);
+        const minValue = input.dataset.min ? parseFloat(input.dataset.min) : null;
+        const maxValue = input.dataset.max ? parseFloat(input.dataset.max) : null;
+        
+        // Allow empty input during typing (for live updates)
+        if (inputValue === '' || inputValue === '.') {
+            if (isLiveUpdate) {
+                // During live update, allow partial input but don't calculate
+                return;
+            } else {
+                // On blur, reset to original if empty
+                input.value = originalValue % 1 === 0 ? Math.round(originalValue).toString() : originalValue.toFixed(1);
+                return;
+            }
+        }
+        
+        const newValue = parseFloat(inputValue);
+        
+        // Validate the input
+        if (isNaN(newValue) || newValue <= 0) {
+            if (isLiveUpdate) {
+                // During typing, allow invalid input temporarily
+                return;
+            } else {
+                // On blur, reset to original if invalid
+                input.value = originalValue % 1 === 0 ? Math.round(originalValue).toString() : originalValue.toFixed(1);
+                return;
+            }
+        }
+        
+        // Validate against min/max if provided (only on blur)
+        if (!isLiveUpdate && minValue !== null && maxValue !== null) {
+            if (newValue < minValue || newValue > maxValue) {
+                // Reset to original if out of range
+                input.value = originalValue % 1 === 0 ? Math.round(originalValue).toString() : originalValue.toFixed(1);
+                return;
+            }
+        }
+        
+        // Update the dose value (format on blur, allow raw input during typing)
+        let formattedValue = newValue;
+        if (!isLiveUpdate) {
+            formattedValue = newValue % 1 === 0 ? Math.round(newValue) : Math.round(newValue * 10) / 10;
+            input.value = formattedValue % 1 === 0 ? Math.round(formattedValue).toString() : formattedValue.toFixed(1);
+            input.dataset.original = formattedValue;
+        }
+        
+        // Recalculate bottle size (use current input value for live updates)
+        const prescriptionDays = prescriptionDaysInput ? parseFloat(prescriptionDaysInput.value) : null;
+        if (!isNaN(prescriptionDays) && prescriptionDays > 0 && !isNaN(newValue) && newValue > 0) {
+            const frequencyHours = frequencyInput ? parseFloat(frequencyInput.value) : null;
+            let dosesPerDay = 1;
+            if (frequencyHours && frequencyHours > 0) {
+                dosesPerDay = 24 / frequencyHours;
+            }
+            const totalMl = newValue * dosesPerDay * prescriptionDays;
+            
+            // Update bottle size display
+            const bottleSizeElement = resultBreakdown.querySelector('.bottle-size-value');
+            if (bottleSizeElement) {
+                bottleSizeElement.textContent = totalMl.toFixed(1);
+            }
+        }
     }
     
     // Update placeholder and unit display based on selected unit
