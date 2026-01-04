@@ -3359,6 +3359,7 @@ function initializeDosingCalculator() {
     const maxDoseTypePerDose = document.getElementById('maxDoseTypePerDose');
     const maxDoseInputContainer = document.getElementById('maxDoseInputContainer');
     const maxDoseValue = document.getElementById('maxDoseValue');
+    const prescriptionDaysInput = document.getElementById('prescriptionDays');
     
     function getFrequencyLabel(hours) {
         const labels = {
@@ -3526,6 +3527,10 @@ function initializeDosingCalculator() {
         const maxDoseValueInput = maxDoseValue ? parseFloat(maxDoseValue.value) : null;
         const maxDoseMg = (!isNaN(maxDoseValueInput) && maxDoseValueInput > 0) ? maxDoseValueInput : null;
         
+        // Get prescription days
+        const prescriptionDays = prescriptionDaysInput ? parseFloat(prescriptionDaysInput.value) : null;
+        const hasPrescriptionDays = !isNaN(prescriptionDays) && prescriptionDays > 0;
+        
         // Only require weight and dose per kg (concentration is optional)
         if (!weightInputValue || !doseRange || weightInputValue <= 0 || doseRange.min <= 0) {
             resultBox.style.display = 'none';
@@ -3602,6 +3607,40 @@ function initializeDosingCalculator() {
             return html;
         }
         
+        // Helper function to generate prescription script and bottle size
+        function addPrescriptionScript(html, doseMl, frequencyText, days) {
+            if (!hasPrescriptionDays || !concentration || doseMl === null) {
+                return html;
+            }
+            
+            // Format the dose for the script (round to 1 decimal if needed, otherwise whole number)
+            // Use the formatted value for calculations to match what's displayed
+            let doseMlFormatted;
+            if (doseMl % 1 === 0) {
+                doseMlFormatted = Math.round(doseMl);
+            } else {
+                // Round to 1 decimal place: multiply by 10, round, divide by 10
+                doseMlFormatted = Math.round(doseMl * 10) / 10;
+            }
+            
+            // Calculate total mL needed using the formatted dose value
+            let dosesPerDay = 1; // Default for daily dosing
+            if (frequencyHours && frequencyHours > 0) {
+                dosesPerDay = 24 / frequencyHours;
+            }
+            const totalMl = doseMlFormatted * dosesPerDay * days;
+            
+            // Generate prescription script - format display properly
+            const scriptDoseDisplay = doseMlFormatted % 1 === 0 ? Math.round(doseMlFormatted).toString() : doseMlFormatted.toFixed(1);
+            const script = `Take ${scriptDoseDisplay}mL by mouth ${frequencyText} x ${Math.round(days)} ${days === 1 ? 'day' : 'days'}`;
+            
+            html += `<div class="breakdown-item" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid rgba(255,255,255,0.4); font-weight: 600; font-size: 1.05em;">Prescription Script:</div>`;
+            html += `<div class="breakdown-item" style="margin-bottom: 12px; font-size: 1.1em; letter-spacing: 0.3px;">${script}</div>`;
+            html += `<div class="breakdown-item" style="font-weight: 600; color: rgba(255,255,255,0.95);">Bottle Size: ${totalMl.toFixed(1)} mL</div>`;
+            
+            return html;
+        }
+        
         // Build prescription-like output
         let resultText = '';
         let breakdownHTML = '';
@@ -3639,6 +3678,7 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDose.ml, frequencyText, prescriptionDays);
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
                         breakdownHTML = `
@@ -3646,6 +3686,9 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // Use average of min and max for prescription script
+                        const avgDoseMl = (perDoseMinMl + perDoseMaxMl) / 2;
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays);
                     }
                 } else {
                     // mg only with range
@@ -3660,10 +3703,21 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="margin-top: 8px; font-weight: 600; border-bottom: none;">Total Daily: ${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // If we have concentration, calculate mL for prescription
+                        if (concentration && concentration > 0) {
+                            const optimizedDoseMl = optimizedDose.mg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDoseMl, frequencyText, prescriptionDays);
+                        }
                     } else {
                         resultText = `${Math.round(perDoseMinMg)}-${Math.round(perDoseMaxMg)} mg ${frequencyText}`;
                         breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // If we have concentration, calculate mL for prescription
+                        if (concentration && concentration > 0) {
+                            const avgDoseMg = (perDoseMinMg + perDoseMaxMg) / 2;
+                            const avgDoseMl = avgDoseMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDoseMl, frequencyText, prescriptionDays);
+                        }
                     }
                 }
             } else {
@@ -3680,6 +3734,7 @@ function initializeDosingCalculator() {
                         <div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>
                     `;
                     breakdownHTML = addLimitNote(breakdownHTML);
+                    breakdownHTML = addPrescriptionScript(breakdownHTML, perDoseMl, frequencyText, prescriptionDays);
                 } else {
                     resultText = `${Math.round(perDoseMg)} mg ${frequencyText}`;
                     if (maxDailyLimitApplied || maxPerDoseLimitApplied) {
@@ -3705,10 +3760,14 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${dailyTotalMaxMl.toFixed(1)} mL (${Math.round(dailyTotalMaxMg)} mg) per day</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDaily.ml, 'once daily', prescriptionDays);
                     } else {
                         resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
                         breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg per day</div>`;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // Use average for prescription script
+                        const avgDailyMl = (dailyTotalMinMl + dailyTotalMaxMl) / 2;
+                        breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays);
                     }
                 } else {
                     const optimizedDaily = calculateOptimizedDose(dailyTotalMinMg, dailyTotalMaxMg, null, null);
@@ -3722,10 +3781,21 @@ function initializeDosingCalculator() {
                             <div class="breakdown-item" style="border-bottom: none;">Max: ${Math.round(dailyTotalMaxMg)} mg per day</div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // If we have concentration, calculate mL for prescription
+                        if (concentration && concentration > 0) {
+                            const optimizedDailyMl = optimizedDaily.mg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDailyMl, 'once daily', prescriptionDays);
+                        }
                     } else {
                         resultText = `${Math.round(dailyTotalMinMg)}-${Math.round(dailyTotalMaxMg)} mg once daily`;
                         if (maxDailyLimitApplied) {
                             breakdownHTML = addLimitNote('');
+                        }
+                        // If we have concentration, calculate mL for prescription
+                        if (concentration && concentration > 0) {
+                            const avgDailyMg = (dailyTotalMinMg + dailyTotalMaxMg) / 2;
+                            const avgDailyMl = avgDailyMg / concentration;
+                            breakdownHTML = addPrescriptionScript(breakdownHTML, avgDailyMl, 'once daily', prescriptionDays);
                         }
                     }
                 }
@@ -3738,6 +3808,7 @@ function initializeDosingCalculator() {
                     resultText = `${dailyTotalMl.toFixed(1)} mL once daily`;
                     breakdownHTML = `<div class="breakdown-item">${Math.round(dailyTotalMg)} mg per day</div>`;
                     breakdownHTML = addLimitNote(breakdownHTML);
+                    breakdownHTML = addPrescriptionScript(breakdownHTML, dailyTotalMl, 'once daily', prescriptionDays);
                 } else {
                     resultText = `${Math.round(dailyTotalMg)} mg once daily`;
                     if (maxDailyLimitApplied) {
@@ -3871,6 +3942,9 @@ function initializeDosingCalculator() {
     }
     if (maxDoseValue) {
         maxDoseValue.addEventListener('input', calculateDose);
+    }
+    if (prescriptionDaysInput) {
+        prescriptionDaysInput.addEventListener('input', calculateDose);
     }
     
     // Initialize button styles
