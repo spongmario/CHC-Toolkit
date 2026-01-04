@@ -3871,6 +3871,8 @@ function initializeDosingCalculator() {
     // Update max dose button styles when radio buttons change
     function updateMaxDoseButtonStyles() {
         const maxDoseLabels = document.querySelectorAll('.max-dose-radio-label');
+        const toggleSwitch = document.querySelector('.max-dose-toggle-switch');
+        
         maxDoseLabels.forEach(label => {
             const radio = label.querySelector('input[type="radio"]');
             if (radio && radio.checked) {
@@ -3879,6 +3881,18 @@ function initializeDosingCalculator() {
                 label.classList.remove('checked');
             }
         });
+        
+        // Update toggle switch class for browsers without :has() support
+        if (toggleSwitch) {
+            toggleSwitch.classList.remove('max-dose-none', 'max-dose-daily', 'max-dose-perdose');
+            if (maxDoseTypeNone && maxDoseTypeNone.checked) {
+                toggleSwitch.classList.add('max-dose-none');
+            } else if (maxDoseTypeDaily && maxDoseTypeDaily.checked) {
+                toggleSwitch.classList.add('max-dose-daily');
+            } else if (maxDoseTypePerDose && maxDoseTypePerDose.checked) {
+                toggleSwitch.classList.add('max-dose-perdose');
+            }
+        }
     }
     
     // Handle max dose type changes

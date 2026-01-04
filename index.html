@@ -386,43 +386,53 @@
                                     <option value="6">Every 6 hours (Q6H)</option>
                                 </select>
                             </div>
-                            <div class="form-group dosing-form-group">
-                                <label for="medicationConcentration" class="dosing-label">
-                                    Liquid Concentration (mg/mL) 
-                                    <span class="optional-text">(optional)</span>
-                                </label>
-                                <input type="text" id="medicationConcentration" placeholder="e.g., 100/5" class="dosing-input">
-                            </div>
-                            <div class="form-group dosing-form-group">
-                                <label class="dosing-label">Maximum Dose Limits</label>
-                                <div class="max-dose-toggle">
-                                    <label class="max-dose-radio-label">
-                                        <input type="radio" name="maxDoseType" id="maxDoseTypeNone" value="none" checked tabindex="-1">
-                                        <span class="max-dose-button-text">None</span>
-                                    </label>
-                                    <label class="max-dose-radio-label">
-                                        <input type="radio" name="maxDoseType" id="maxDoseTypeDaily" value="daily" tabindex="-1">
-                                        <span class="max-dose-button-text">Max Daily (mg/day)</span>
-                                    </label>
-                                    <label class="max-dose-radio-label">
-                                        <input type="radio" name="maxDoseType" id="maxDoseTypePerDose" value="perDose" tabindex="-1">
-                                        <span class="max-dose-button-text">Max Per Dose (mg)</span>
-                                    </label>
+                            
+                            <!-- Optional Settings Section -->
+                            <div class="optional-settings-section">
+                                <div class="optional-settings-header">
+                                    <h3 class="optional-settings-title">Optional Settings</h3>
                                 </div>
-                                <div id="maxDoseInputContainer" style="display: none; margin-top: 12px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <input type="text" id="maxDoseValue" placeholder="Enter max dose" class="dosing-input" style="flex: 1;">
-                                        <span style="color: var(--text-secondary); font-weight: 600;">mg</span>
+                                <div class="optional-settings-content">
+                                    <div class="form-group dosing-form-group">
+                                        <label for="medicationConcentration" class="dosing-label">
+                                            Liquid Concentration (mg/mL)
+                                        </label>
+                                        <input type="text" id="medicationConcentration" placeholder="e.g., 100/5" class="dosing-input">
+                                    </div>
+                                    <div class="form-group dosing-form-group">
+                                        <label class="dosing-label">Maximum Dose Limits</label>
+                                        <div class="max-dose-toggle-container">
+                                            <div class="max-dose-toggle-switch">
+                                                <label class="max-dose-radio-label">
+                                                    <input type="radio" name="maxDoseType" id="maxDoseTypeNone" value="none" checked tabindex="-1">
+                                                    <span class="max-dose-button-text">None</span>
+                                                </label>
+                                                <label class="max-dose-radio-label">
+                                                    <input type="radio" name="maxDoseType" id="maxDoseTypeDaily" value="daily" tabindex="-1">
+                                                    <span class="max-dose-button-text">Max Daily</span>
+                                                </label>
+                                                <label class="max-dose-radio-label">
+                                                    <input type="radio" name="maxDoseType" id="maxDoseTypePerDose" value="perDose" tabindex="-1">
+                                                    <span class="max-dose-button-text">Max Per Dose</span>
+                                                </label>
+                                                <div class="max-dose-slider"></div>
+                                            </div>
+                                        </div>
+                                        <div id="maxDoseInputContainer" style="display: none; margin-top: 12px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <input type="text" id="maxDoseValue" placeholder="Enter max dose" class="dosing-input" style="flex: 1;">
+                                                <span style="color: var(--text-secondary); font-weight: 600;">mg</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group dosing-form-group">
+                                        <label for="prescriptionDays" class="dosing-label">
+                                            # Days
+                                        </label>
+                                        <input type="text" id="prescriptionDays" placeholder="e.g., 7" class="dosing-input">
+                                        <div class="help-text">Enter number of days to calculate bottle size and generate prescription script</div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="form-group dosing-form-group">
-                                <label for="prescriptionDays" class="dosing-label">
-                                    # Days 
-                                    <span class="optional-text">(optional)</span>
-                                </label>
-                                <input type="text" id="prescriptionDays" placeholder="e.g., 7" class="dosing-input">
-                                <div class="help-text">Enter number of days to calculate bottle size and generate prescription script</div>
                             </div>
                             <div id="dosingResult" class="dosing-result-box" style="display: none;">
                                 <h3 class="dosing-result-title">Dose</h3>

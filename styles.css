@@ -1827,13 +1827,19 @@ html {
     font-style: italic;
 }
 
-.max-dose-toggle {
-    display: flex;
-    gap: var(--spacing-sm);
+.max-dose-toggle-container {
     margin-top: var(--spacing-sm);
-    background: var(--bg-tertiary);
+    width: 100%;
+}
+
+.max-dose-toggle-switch {
+    position: relative;
+    display: flex;
+    background: #e2e8f0;
+    border-radius: var(--radius-lg);
     padding: 4px;
-    border-radius: var(--radius-md);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 2px solid #cbd5e1;
 }
 
 .max-dose-radio-label {
@@ -1844,18 +1850,18 @@ html {
     cursor: pointer;
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: 0.95em;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--radius);
+    font-size: 0.9em;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
     transition: var(--transition);
     user-select: none;
     background: transparent;
     margin: 0 !important;
     flex: 1;
+    z-index: 2;
 }
 
 .max-dose-radio-label:hover {
-    background: rgba(255, 255, 255, 0.5);
     color: var(--text-primary);
 }
 
@@ -1875,38 +1881,99 @@ html {
     pointer-events: none;
     width: 100%;
     text-align: center;
+    position: relative;
+    z-index: 1;
 }
 
-.max-dose-radio-label:has(input[type="radio"]:checked) {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: #ffffff;
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+.max-dose-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: calc(33.333% - 8px);
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .max-dose-radio-label:has(input[type="radio"]:checked) .max-dose-button-text {
-    color: #ffffff;
-}
-
-.max-dose-radio-label:has(input[type="radio"]:checked):hover {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, #0369a1 100%);
-    box-shadow: var(--shadow-md);
-}
-
-.max-dose-radio-label.checked {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: #ffffff;
-    box-shadow: var(--shadow);
-    transform: translateY(-1px);
+    color: var(--primary);
+    font-weight: 700;
 }
 
 .max-dose-radio-label.checked .max-dose-button-text {
-    color: #ffffff;
+    color: var(--primary);
+    font-weight: 700;
 }
 
-.max-dose-radio-label.checked:hover {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, #0369a1 100%);
-    box-shadow: var(--shadow-md);
+/* Move slider based on selected option */
+.max-dose-toggle-switch:has(#maxDoseTypeNone:checked) .max-dose-slider {
+    transform: translateX(0);
+}
+
+.max-dose-toggle-switch:has(#maxDoseTypeDaily:checked) .max-dose-slider {
+    transform: translateX(100%);
+}
+
+.max-dose-toggle-switch:has(#maxDoseTypePerDose:checked) .max-dose-slider {
+    transform: translateX(200%);
+}
+
+/* Fallback for browsers without :has() support */
+.max-dose-toggle-switch.max-dose-none .max-dose-slider {
+    transform: translateX(0);
+}
+
+.max-dose-toggle-switch.max-dose-daily .max-dose-slider {
+    transform: translateX(100%);
+}
+
+.max-dose-toggle-switch.max-dose-perdose .max-dose-slider {
+    transform: translateX(200%);
+}
+
+/* Optional Settings Section */
+.optional-settings-section {
+    margin-top: var(--spacing-2xl);
+    margin-bottom: var(--spacing-lg);
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-tertiary);
+    padding: var(--spacing-xl);
+    transition: var(--transition);
+}
+
+.optional-settings-header {
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.optional-settings-title {
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9em;
+}
+
+.optional-settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.optional-settings-section .dosing-form-group {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 .dosing-result-box {
