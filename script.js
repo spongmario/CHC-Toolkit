@@ -3349,6 +3349,10 @@ function initializeDosingCalculator() {
     const weightUnitKg = document.getElementById('weightUnitKg');
     const weightUnitLbs = document.getElementById('weightUnitLbs');
     const dosePerKgInput = document.getElementById('dosePerKg');
+    const doseUnitDay = document.getElementById('doseUnitDay');
+    const doseUnitDose = document.getElementById('doseUnitDose');
+    const doseUnitDisplay = document.getElementById('doseUnitDisplay');
+    const doseUnitSelector = document.querySelector('.dose-unit-selector');
     const concentrationInput = document.getElementById('medicationConcentration');
     const frequencyInput = document.getElementById('dosingFrequency');
     const resultBox = document.getElementById('dosingResult');
@@ -3520,6 +3524,7 @@ function initializeDosingCalculator() {
         const doseRange = parseDoseRange(dosePerKgInput.value);
         const concentration = parseConcentration(concentrationInput.value);
         const frequencyHours = frequencyInput ? parseFloat(frequencyInput.value) : null;
+        const doseUnit = doseUnitDay && doseUnitDay.checked ? 'day' : 'dose';
         
         // Get max dose settings
         const maxDoseType = maxDoseTypeNone && maxDoseTypeNone.checked ? 'none' :
@@ -3541,9 +3546,31 @@ function initializeDosingCalculator() {
         // Convert weight to kg if needed (1 kg = 2.20462 lbs)
         const weightInKg = weightUnit === 'lbs' ? weightInputValue / 2.20462 : weightInputValue;
         
-        // Calculate daily total doses in mg for min, max, and optimized
-        let dailyTotalMinMg = weightInKg * doseRange.min;
-        let dailyTotalMaxMg = weightInKg * doseRange.max;
+        // Calculate doses based on whether input is per day or per dose
+        let dailyTotalMinMg, dailyTotalMaxMg;
+        let perDoseMinMg = null, perDoseMaxMg = null;
+        
+        if (doseUnit === 'day') {
+            // Input is mg/kg/day - calculate daily total first
+            dailyTotalMinMg = weightInKg * doseRange.min;
+            dailyTotalMaxMg = weightInKg * doseRange.max;
+        } else {
+            // Input is mg/kg/dose - calculate per dose first
+            perDoseMinMg = weightInKg * doseRange.min;
+            perDoseMaxMg = weightInKg * doseRange.max;
+            
+            // Calculate daily total from per dose (need frequency)
+            if (frequencyHours && frequencyHours > 0) {
+                const dosesPerDay = 24 / frequencyHours;
+                dailyTotalMinMg = perDoseMinMg * dosesPerDay;
+                dailyTotalMaxMg = perDoseMaxMg * dosesPerDay;
+            } else {
+                // No frequency specified, can't calculate daily total
+                // Set daily total same as per dose for now (will be handled in display logic)
+                dailyTotalMinMg = perDoseMinMg;
+                dailyTotalMaxMg = perDoseMaxMg;
+            }
+        }
         
         // Apply max daily limit if specified
         let maxDailyLimitApplied = false;
@@ -3558,18 +3585,23 @@ function initializeDosingCalculator() {
             }
         }
         
-        // Calculate per dose if frequency is provided
-        let perDoseMinMg = null;
-        let perDoseMaxMg = null;
+        // Calculate per dose if frequency is provided (or if input is already per dose)
         let perDoseMinMl = null;
         let perDoseMaxMl = null;
         let optimizedDose = null;
         let maxPerDoseLimitApplied = false;
         
-        if (frequencyHours && frequencyHours > 0) {
+        // If input is per day, we need to calculate per dose from daily total
+        // If input is per dose, we already have perDoseMinMg and perDoseMaxMg
+        if (doseUnit === 'day' && frequencyHours && frequencyHours > 0) {
             const dosesPerDay = 24 / frequencyHours;
             perDoseMinMg = dailyTotalMinMg / dosesPerDay;
             perDoseMaxMg = dailyTotalMaxMg / dosesPerDay;
+        }
+        // If doseUnit === 'dose', perDoseMinMg and perDoseMaxMg are already set above
+        
+        if (perDoseMinMg !== null && perDoseMaxMg !== null) {
+            const dosesPerDay = frequencyHours && frequencyHours > 0 ? 24 / frequencyHours : 1;
             
             // Apply max per dose limit if specified
             if (maxDoseType === 'perDose' && maxDoseMg !== null) {
@@ -4147,8 +4179,53 @@ function initializeDosingCalculator() {
         }
     }
     
+    // Update dose unit selector slider position and label
+    function updateDoseUnitSlider() {
+        if (doseUnitSelector) {
+            doseUnitSelector.classList.remove('dose-unit-day', 'dose-unit-dose');
+            if (doseUnitDay && doseUnitDay.checked) {
+                doseUnitSelector.classList.add('dose-unit-day');
+                if (doseUnitDisplay) doseUnitDisplay.textContent = '/day';
+            } else if (doseUnitDose && doseUnitDose.checked) {
+                doseUnitSelector.classList.add('dose-unit-dose');
+                if (doseUnitDisplay) doseUnitDisplay.textContent = '/dose';
+            }
+        }
+    }
+    
+    // Update dose unit button styles
+    function updateDoseUnitButtonStyles() {
+        const doseUnitLabels = document.querySelectorAll('.dose-unit-radio-label');
+        doseUnitLabels.forEach(label => {
+            const radio = label.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+                label.classList.add('checked');
+            } else {
+                label.classList.remove('checked');
+            }
+        });
+    }
+    
     // Initialize weight unit slider
     updateWeightUnitSlider();
+    
+    // Initialize dose unit slider
+    if (doseUnitDay && doseUnitDose) {
+        updateDoseUnitSlider();
+        updateDoseUnitButtonStyles();
+        
+        doseUnitDay.addEventListener('change', () => {
+            updateDoseUnitSlider();
+            updateDoseUnitButtonStyles();
+            calculateDose();
+        });
+        
+        doseUnitDose.addEventListener('change', () => {
+            updateDoseUnitSlider();
+            updateDoseUnitButtonStyles();
+            calculateDose();
+        });
+    }
     
     if (weightUnitKg) {
         weightUnitKg.addEventListener('change', () => {
