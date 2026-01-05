@@ -2168,6 +2168,27 @@ html {
     .optional-settings-section {
         padding: var(--spacing-md);
     }
+    
+    .max-dose-toggle-switch {
+        padding: 2px;
+    }
+    
+    .max-dose-radio-label {
+        padding: 6px 8px;
+        font-size: 0.85em;
+        line-height: 1.2;
+    }
+    
+    .max-dose-button-text {
+        line-height: 1.2;
+    }
+    
+    .max-dose-slider {
+        top: 2px;
+        left: 2px;
+        height: calc(100% - 4px);
+        width: calc((100% - 4px) / 3);
+    }
 }
 
 /* ==================== Pediatric Tylenol/Motrin Dosing Styles ==================== */
