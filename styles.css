@@ -2164,6 +2164,10 @@ html {
     .weight-input-container .dosing-input {
         max-width: 100%;
     }
+    
+    .optional-settings-section {
+        padding: var(--spacing-md);
+    }
 }
 
 /* ==================== Pediatric Tylenol/Motrin Dosing Styles ==================== */
