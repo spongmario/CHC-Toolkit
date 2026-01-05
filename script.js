@@ -3453,11 +3453,12 @@ function initializeDosingCalculator() {
     }
     
     function calculateOptimizedDose(minMg, maxMg, concentration, frequencyHours) {
-        // Calculate middle of range
+        // Calculate middle of range - keep unrounded for all calculations
         const middleMg = (minMg + maxMg) / 2;
         
         if (concentration && concentration > 0) {
             // For liquid: prioritize whole numbers, then 0.5 increments
+            // Keep unrounded values for all calculations
             const minMl = minMg / concentration;
             const maxMl = maxMg / concentration;
             const middleMl = middleMg / concentration;
@@ -3467,8 +3468,8 @@ function initializeDosingCalculator() {
             const wholeNumberMg = wholeNumberMl * concentration;
             
             if (wholeNumberMg >= minMg && wholeNumberMg <= maxMg) {
-                // Whole number works! Use it
-                return { ml: wholeNumberMl, mg: wholeNumberMg };
+                // Whole number works! Return it (rounding happens only at display)
+                return { ml: wholeNumberMl, mg: wholeNumberMg, mlUnrounded: middleMl, mgUnrounded: middleMg };
             }
             
             // If whole number doesn't work, try the next closest whole numbers
@@ -3478,13 +3479,13 @@ function initializeDosingCalculator() {
             // Check if lower whole number is in range
             const lowerWholeMg = lowerWhole * concentration;
             if (lowerWholeMg >= minMg && lowerWholeMg <= maxMg) {
-                return { ml: lowerWhole, mg: lowerWholeMg };
+                return { ml: lowerWhole, mg: lowerWholeMg, mlUnrounded: middleMl, mgUnrounded: middleMg };
             }
             
             // Check if upper whole number is in range
             const upperWholeMg = upperWhole * concentration;
             if (upperWholeMg >= minMg && upperWholeMg <= maxMg) {
-                return { ml: upperWhole, mg: upperWholeMg };
+                return { ml: upperWhole, mg: upperWholeMg, mlUnrounded: middleMl, mgUnrounded: middleMg };
             }
             
             // No whole number works, fall back to 0.5 increments
@@ -3495,25 +3496,25 @@ function initializeDosingCalculator() {
             if (optimizedMg < minMg) {
                 // Round up to nearest 0.5 that's at least min
                 const roundedMinMl = Math.ceil(minMl * 2) / 2;
-                return { ml: roundedMinMl, mg: roundedMinMl * concentration };
+                return { ml: roundedMinMl, mg: roundedMinMl * concentration, mlUnrounded: middleMl, mgUnrounded: middleMg };
             } else if (optimizedMg > maxMg) {
                 // Round down to nearest 0.5 that's at most max
                 const roundedMaxMl = Math.floor(maxMl * 2) / 2;
-                return { ml: roundedMaxMl, mg: roundedMaxMl * concentration };
+                return { ml: roundedMaxMl, mg: roundedMaxMl * concentration, mlUnrounded: middleMl, mgUnrounded: middleMg };
             } else {
-                return { ml: roundedMl, mg: optimizedMg };
+                return { ml: roundedMl, mg: optimizedMg, mlUnrounded: middleMl, mgUnrounded: middleMg };
             }
         } else {
-            // For mg: round to nearest whole number
+            // For mg: round to nearest whole number for display selection
             const roundedMg = Math.round(middleMg);
             
             // Ensure it's within range
             if (roundedMg < minMg) {
-                return { ml: null, mg: Math.ceil(minMg) };
+                return { ml: null, mg: Math.ceil(minMg), mgUnrounded: middleMg };
             } else if (roundedMg > maxMg) {
-                return { ml: null, mg: Math.floor(maxMg) };
+                return { ml: null, mg: Math.floor(maxMg), mgUnrounded: middleMg };
             } else {
-                return { ml: null, mg: roundedMg };
+                return { ml: null, mg: roundedMg, mgUnrounded: middleMg };
             }
         }
     }
@@ -3727,6 +3728,8 @@ function initializeDosingCalculator() {
                             </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // Use the displayed optimized dose value (already rounded) for prescription script
+                        // This ensures bottle size is based on the final rounded mL per dose
                         breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDose.ml, frequencyText, prescriptionDays, perDoseMinMl, perDoseMaxMl);
                     } else {
                         resultText = `${perDoseMinMl.toFixed(1)}-${perDoseMaxMl.toFixed(1)} mL ${frequencyText}`;
@@ -3764,6 +3767,7 @@ function initializeDosingCalculator() {
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // If we have concentration, calculate mL for prescription
+                        // Calculate from the displayed mg value to ensure consistency
                         if (concentration && concentration > 0) {
                             const optimizedDoseMl = optimizedDose.mg / concentration;
                             const minMl = perDoseMinMg / concentration;
@@ -3829,6 +3833,8 @@ function initializeDosingCalculator() {
                             </div>
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
+                        // Use the displayed optimized dose value (already rounded) for prescription script
+                        // This ensures bottle size is based on the final rounded mL per dose
                         breakdownHTML = addPrescriptionScript(breakdownHTML, optimizedDaily.ml, 'once daily', prescriptionDays, dailyTotalMinMl, dailyTotalMaxMl);
                     } else {
                         resultText = `${dailyTotalMinMl.toFixed(1)}-${dailyTotalMaxMl.toFixed(1)} mL once daily`;
@@ -3857,6 +3863,7 @@ function initializeDosingCalculator() {
                         `;
                         breakdownHTML = addLimitNote(breakdownHTML);
                         // If we have concentration, calculate mL for prescription
+                        // Calculate from the displayed mg value to ensure consistency
                         if (concentration && concentration > 0) {
                             const optimizedDailyMl = optimizedDaily.mg / concentration;
                             const minMl = dailyTotalMinMg / concentration;
