@@ -2589,15 +2589,22 @@ function switchVaccineScheduleTab(scheduleType) {
     });
     
     // Show/hide sections
-    const adultSection = document.getElementById('adult-vaccine-schedule-section');
-    const pediatricSection = document.getElementById('pediatric-vaccine-schedule-section');
+    const adultCdcSection = document.getElementById('adult-cdc-vaccine-schedule-section');
+    const pediatricCdcSection = document.getElementById('pediatric-cdc-vaccine-schedule-section');
+    const pediatricAapSection = document.getElementById('pediatric-aap-vaccine-schedule-section');
     
-    if (scheduleType === 'adult') {
-        if (adultSection) adultSection.style.display = 'block';
-        if (pediatricSection) pediatricSection.style.display = 'none';
-    } else if (scheduleType === 'pediatric') {
-        if (adultSection) adultSection.style.display = 'none';
-        if (pediatricSection) pediatricSection.style.display = 'block';
+    // Hide all sections first
+    if (adultCdcSection) adultCdcSection.style.display = 'none';
+    if (pediatricCdcSection) pediatricCdcSection.style.display = 'none';
+    if (pediatricAapSection) pediatricAapSection.style.display = 'none';
+    
+    // Show the selected section
+    if (scheduleType === 'adult-cdc') {
+        if (adultCdcSection) adultCdcSection.style.display = 'block';
+    } else if (scheduleType === 'pediatric-cdc') {
+        if (pediatricCdcSection) pediatricCdcSection.style.display = 'block';
+    } else if (scheduleType === 'pediatric-aap') {
+        if (pediatricAapSection) pediatricAapSection.style.display = 'block';
     }
 }
 

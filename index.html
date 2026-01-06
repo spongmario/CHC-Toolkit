@@ -36,7 +36,7 @@
                 </button>
                 <button class="nav-item" data-page="vaccine-schedule">
                     <span class="nav-icon">💉</span>
-                    <span class="nav-text">CDC Vaccine Schedule</span>
+                    <span class="nav-text">Vaccines</span>
                 </button>
                 <button class="nav-item" data-page="pathways">
                     <span class="nav-icon">📋</span>
@@ -546,28 +546,29 @@
                 </div>
             </div>
 
-            <!-- CDC Vaccine Schedule Page -->
+            <!-- Vaccine Schedule Page -->
             <div id="vaccine-schedule-page" class="page">
                 <div class="page-header">
-                    <h2>CDC Vaccine Schedules</h2>
-                    <p class="page-subtitle">Recommended immunization schedules from the Centers for Disease Control and Prevention</p>
+                    <h2>Vaccines</h2>
+                    <p class="page-subtitle">Recommended immunization schedules from the CDC and AAP</p>
                 </div>
                 <div class="pathways-content">
                     <!-- Schedule Type Tabs -->
                     <div class="language-tabs" data-section="vaccine-schedule" style="margin-bottom: 30px; border-bottom: 3px solid #e9ecef;">
-                        <button class="language-tab active" data-language="adult" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('adult')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Adult</button>
-                        <button class="language-tab" data-language="pediatric" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric</button>
+                        <button class="language-tab active" data-language="adult-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('adult-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Adult CDC</button>
+                        <button class="language-tab" data-language="pediatric-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric CDC</button>
+                        <button class="language-tab" data-language="pediatric-aap" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-aap')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric AAP</button>
                     </div>
                     
-                    <!-- Adult Vaccine Schedule Section -->
-                    <div id="adult-vaccine-schedule-section" class="vaccine-schedule-section">
+                    <!-- Adult CDC Vaccine Schedule Section -->
+                    <div id="adult-cdc-vaccine-schedule-section" class="vaccine-schedule-section">
                         <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                             <div style="display: flex; align-items: flex-start; gap: 14px;">
                                 <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
                                 <div style="flex: 1;">
                                     <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
                                         This vaccine schedule is provided by the <strong>Centers for Disease Control and Prevention (CDC)</strong>. 
-                                        <a href="https://www.cdc.gov/vaccines/hcp/imz-schedules/downloads/adult/adult-combined-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                        <a href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
                                             Click here to view or download the PDF directly
                                         </a>.
                                     </p>
@@ -576,12 +577,13 @@
                         </div>
                         <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
                             <iframe 
-                                src="https://docs.google.com/viewer?url=https%3A%2F%2Fwww.cdc.gov%2Fvaccines%2Fhcp%2Fimz-schedules%2Fdownloads%2Fadult%2Fadult-combined-schedule.pdf&embedded=true" 
+                                src="documents/pathways/cdc-adult-vaccine-schedule.pdf" 
                                 style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
-                                title="CDC Adult Vaccine Schedule">
+                                title="CDC Adult Vaccine Schedule"
+                                type="application/pdf">
                                 <p style="padding: 20px; text-align: center; color: #6c757d;">
                                     Your browser does not support PDFs. 
-                                    <a href="https://www.cdc.gov/vaccines/hcp/imz-schedules/downloads/adult/adult-combined-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                    <a href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
                                         Click here to download the PDF
                                     </a>.
                                 </p>
@@ -589,15 +591,15 @@
                         </div>
                     </div>
                     
-                    <!-- Pediatric Vaccine Schedule Section -->
-                    <div id="pediatric-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
+                    <!-- Pediatric CDC Vaccine Schedule Section -->
+                    <div id="pediatric-cdc-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
                         <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                             <div style="display: flex; align-items: flex-start; gap: 14px;">
                                 <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
                                 <div style="flex: 1;">
                                     <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
                                         This vaccine schedule is provided by the <strong>Centers for Disease Control and Prevention (CDC)</strong>. 
-                                        <a href="https://www.cdc.gov/vaccines/hcp/imz-schedules/downloads/child/0-18yrs-child-combined-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                        <a href="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
                                             Click here to view or download the PDF directly
                                         </a>.
                                     </p>
@@ -606,12 +608,44 @@
                         </div>
                         <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
                             <iframe 
-                                src="https://docs.google.com/viewer?url=https%3A%2F%2Fwww.cdc.gov%2Fvaccines%2Fhcp%2Fimz-schedules%2Fdownloads%2Fchild%2F0-18yrs-child-combined-schedule.pdf&embedded=true" 
+                                src="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" 
                                 style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
-                                title="CDC Pediatric Vaccine Schedule">
+                                title="CDC Pediatric Vaccine Schedule"
+                                type="application/pdf">
                                 <p style="padding: 20px; text-align: center; color: #6c757d;">
                                     Your browser does not support PDFs. 
-                                    <a href="https://www.cdc.gov/vaccines/hcp/imz-schedules/downloads/child/0-18yrs-child-combined-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                    <a href="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                        Click here to download the PDF
+                                    </a>.
+                                </p>
+                            </iframe>
+                        </div>
+                    </div>
+                    
+                    <!-- Pediatric AAP Vaccine Schedule Section -->
+                    <div id="pediatric-aap-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
+                        <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+                            <div style="display: flex; align-items: flex-start; gap: 14px;">
+                                <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
+                                <div style="flex: 1;">
+                                    <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
+                                        This vaccine schedule is provided by the <strong>American Academy of Pediatrics (AAP)</strong>. 
+                                        <a href="documents/pathways/aap-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                            Click here to view or download the PDF directly
+                                        </a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
+                            <iframe 
+                                src="documents/pathways/aap-vaccine-schedule.pdf" 
+                                style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
+                                title="AAP Pediatric Vaccine Schedule"
+                                type="application/pdf">
+                                <p style="padding: 20px; text-align: center; color: #6c757d;">
+                                    Your browser does not support PDFs. 
+                                    <a href="documents/pathways/aap-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
                                         Click here to download the PDF
                                     </a>.
                                 </p>
