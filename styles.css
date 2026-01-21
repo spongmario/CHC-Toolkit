@@ -1024,10 +1024,54 @@ details[open] summary::before {
 }
 
 .shifts-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: var(--spacing-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
+}
+
+.shift-checkbox-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.shift-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.05em;
+}
+
+.shift-checkbox-label:hover {
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow);
+    background: var(--bg-secondary);
+    transform: translateX(4px);
+}
+
+.shift-checkbox-label:has(input:checked) {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    box-shadow: var(--shadow-md);
+}
+
+.shift-checkbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+
+.shift-checkbox-text {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
 }
 
 .shift-box {

@@ -159,22 +159,27 @@
                                     <option value="normal">Normal Shifts</option>
                                     <option value="thursday">Thursday Shifts</option>
                                 </select>
-                                <button type="button" id="clearAllShiftsBtn" class="btn btn-secondary btn-small" title="Clear all shift assignments">Clear All</button>
                             </div>
                         </div>
                         
                         <div class="shifts-container" id="shiftsContainer">
-                            <div class="shift-box">
-                                <h3>Opening Shift (8-6)</h3>
-                                <div id="openingShift" class="shift-assignment"></div>
+                            <div class="shift-checkbox-group">
+                                <label class="shift-checkbox-label">
+                                    <input type="checkbox" id="openingShiftCheckbox" class="shift-checkbox">
+                                    <span class="shift-checkbox-text">Opening Shift (8-6)</span>
+                                </label>
                             </div>
-                            <div class="shift-box">
-                                <h3>Mid Shift (9-7)</h3>
-                                <div id="midShift" class="shift-assignment"></div>
+                            <div class="shift-checkbox-group">
+                                <label class="shift-checkbox-label">
+                                    <input type="checkbox" id="midShiftCheckbox" class="shift-checkbox">
+                                    <span class="shift-checkbox-text">Mid Shift (9-7)</span>
+                                </label>
                             </div>
-                            <div class="shift-box">
-                                <h3>Close Shift (10-8)</h3>
-                                <div id="closeShift" class="shift-assignment"></div>
+                            <div class="shift-checkbox-group">
+                                <label class="shift-checkbox-label">
+                                    <input type="checkbox" id="closeShiftCheckbox" class="shift-checkbox">
+                                    <span class="shift-checkbox-text">Close Shift (10-8)</span>
+                                </label>
                             </div>
                         </div>
                     </section>
@@ -284,7 +289,7 @@
             <div id="forms-page" class="page">
                 <div class="page-header">
                     <h2>Forms</h2>
-                    <p class="page-subtitle">Forms and documents for staff</p>
+                    <p class="page-subtitle">Public program forms and documents</p>
                 </div>
                 <div class="pathways-content">
                     <div class="pathways-controls">
