@@ -1,4 +1,4 @@
-# CHC Walk-In Patient Calculator
+# Walk-In Patient Calculator
 
 A web-based calculator for estimating remaining patient capacity at the end of the day for your Urgent Care facility.
 
