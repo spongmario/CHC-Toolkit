@@ -1,8 +1,7 @@
 {
   "pathways": {
     "pathways/MDM.pdf": "Billing/Coding",
-    "pathways/Pregnancy WI.docx.pdf": "Pregnancy Concerns",
-    "pathways/Measles Protocol March 2024.docx.pdf": "Measles Protocol"
+    "pathways/Pregnancy WI.docx.pdf": "Pregnancy Concerns"
   },
   "ptGuides": {
     "pt-guides/Lower Back.pdf": "Lower Back"

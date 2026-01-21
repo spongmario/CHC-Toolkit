@@ -1929,25 +1929,9 @@ function getDisplayName(filePath, originalName, type) {
         customDisplayNames[category] = {};
     }
     
-    // Debug for Measles file
-    if (filePath.includes('Measles')) {
-        console.log('getDisplayName called for Measles:', {
-            filePath,
-            category,
-            availableKeys: Object.keys(customDisplayNames[category] || {}),
-            customDisplayNames: customDisplayNames[category]
-        });
-    }
-    
     const customName = customDisplayNames[category][filePath];
     if (customName) {
-        if (filePath.includes('Measles')) {
-            console.log('Found custom name for Measles:', customName);
-        }
         return customName;
-    }
-    if (filePath.includes('Measles')) {
-        console.log('No custom name found for Measles, using original:', originalName);
     }
     return originalName;
 }
