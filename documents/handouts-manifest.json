@@ -28,6 +28,18 @@
     "name": "Bladder Irritants",
     "file": "handouts/Bladder Irritants.pdf",
     "type": "pdf"
+  },
+  {
+    "name": "Children's Miralax Use",
+    "file": "external/plateau-pediatrics-miralax-constipation",
+    "type": "link",
+    "url": "https://www.plateaupediatrics.com/Using-Miralax-for-your-child%E2%80%99s-constipation"
+  },
+  {
+    "name": "Providence Center for Assault & Abuse",
+    "file": "external/providence-intervention-center-everett",
+    "type": "link",
+    "url": "https://www.providence.org/locations/wa/intervention-center-for-assault-and-abuse-everett"
   }
 ]
 

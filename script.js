@@ -672,8 +672,12 @@ if (window.location.hostname.includes('github.io') || window.location.hostname.i
         // Fallback to local
         GITHUB_BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
     }
+} else if (window.location.protocol === 'file:') {
+    // Opening index.html directly: use paths relative to this file (./documents/...).
+    // Note: Chrome/Edge often block fetch() from file:// — use a local HTTP server to preview.
+    GITHUB_BASE_URL = '.';
 } else {
-    // Local development
+    // Local development (http://localhost, Live Server, etc.)
     GITHUB_BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
 }
 
@@ -1004,6 +1008,7 @@ function renderPathways(filter = '', category = null) {
 
 function getFileIcon(fileType) {
     if (fileType === 'pdf') return '📄';
+    if (fileType === 'link') return '🔗';
     if (fileType === 'doc' || fileType === 'docx') return '📝';
     if (fileType === 'txt') return '📃';
     return '📎';
@@ -2293,13 +2298,17 @@ async function loadHandouts() {
         const manifest = await response.json();
         await loadCustomDisplayNames(); // Load custom names from GitHub
         handouts = manifest.map((item, index) => {
+            const fileType = item.type || getFileExtension(item.name);
+            const url = item.url
+                ? item.url
+                : `${GITHUB_BASE_URL}/documents/${item.file}`;
             return {
                 id: index,
                 file: item.file,
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'handout'),
-                fileType: item.type || getFileExtension(item.name),
-                url: `${GITHUB_BASE_URL}/documents/${item.file}`
+                fileType,
+                url
             };
         });
         
@@ -2430,6 +2439,10 @@ function renderHandouts(filter = '', language = null) {
                 // Find the actual index in the original handouts array
                 const actualIndex = handouts.findIndex(h => h.id === handout.id);
                 const displayName = handout.displayName || handout.name;
+                const downloadBtn =
+                    handout.fileType === 'link'
+                        ? ''
+                        : `<button class="btn btn-secondary btn-small" onclick="downloadHandout(${actualIndex})">Download</button>`;
                 return `
                     <div class="pathway-list-item" onclick="viewHandout(${actualIndex})">
                         <div class="pathway-list-icon">${fileIcon}</div>
@@ -2438,7 +2451,7 @@ function renderHandouts(filter = '', language = null) {
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
                             <button class="btn btn-primary btn-small" onclick="viewHandout(${actualIndex})">View</button>
-                            <button class="btn btn-secondary btn-small" onclick="downloadHandout(${actualIndex})">Download</button>
+                            ${downloadBtn}
                         </div>
                     </div>
                 `;
@@ -2453,7 +2466,12 @@ function renderHandouts(filter = '', language = null) {
 function viewHandout(index) {
     const handout = handouts[index];
     if (!handout) return;
-    
+
+    if (handout.fileType === 'link') {
+        window.open(handout.url, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
     // Open document from GitHub URL
     const newWindow = window.open();
     if (handout.fileType === 'pdf') {
@@ -2524,7 +2542,11 @@ function viewHandout(index) {
 function downloadHandout(index) {
     const handout = handouts[index];
     if (!handout) return;
-    
+
+    if (handout.fileType === 'link') {
+        return;
+    }
+
     // Direct download from GitHub
     const link = document.createElement('a');
     link.href = handout.url;
