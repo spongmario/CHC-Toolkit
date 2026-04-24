@@ -39,6 +39,12 @@
     "file": "pathways/Vitals Chart_PedsCases Notes.pdf",
     "type": "pdf",
     "category": "guide"
+  },
+  {
+    "name": "Hypertension Flowchart",
+    "file": "pathways/hypertension-flowchart.pdf",
+    "type": "pdf",
+    "category": "pathway"
   }
 ]
 

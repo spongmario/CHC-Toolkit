@@ -1011,6 +1011,7 @@ function getFileIcon(fileType) {
     if (fileType === 'link') return '🔗';
     if (fileType === 'doc' || fileType === 'docx') return '📝';
     if (fileType === 'txt') return '📃';
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileType)) return '🖼️';
     return '📎';
 }
 
@@ -1121,7 +1122,27 @@ function viewPathway(index) {
     
     // Open document from GitHub URL
     const newWindow = window.open();
-    if (pathway.fileType === 'pdf') {
+    const imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+    if (imageTypes.includes(pathway.fileType)) {
+        newWindow.document.write(`
+            <html>
+                <head>
+                    <title>${escapeHtml(pathway.displayName || pathway.name)}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { margin: 0; background: #1a1a1e; min-height: 100vh; }
+                        .img-wrap { padding: 0; box-sizing: border-box; }
+                        .img-wrap img { display: block; width: 100%; max-width: 100%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    <div class="img-wrap">
+                        <img src="${pathway.url}" alt="${escapeHtml(pathway.displayName || pathway.name)}" />
+                    </div>
+                </body>
+            </html>
+        `);
+    } else if (pathway.fileType === 'pdf') {
         // For PDFs, embed directly with optional related pathway banner
         let relatedBanner = '';
         if (relatedPathwayUrl && relatedPathwayIndex !== -1) {
