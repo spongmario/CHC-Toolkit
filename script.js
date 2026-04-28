@@ -2584,7 +2584,7 @@ function renderHandouts(filter = '', language = null) {
         handout.displayName = getDisplayName(handout.file, handout.name, 'handout');
     });
     
-    // Get active resource type (handouts vs patient-education)
+    // Get active resource type (handouts vs illness handouts / patient-education)
     const resourceType = getActiveResourceType('handouts');
     
     // No global English/Spanish tabs for Patient Resources — default English for merged variant rows
