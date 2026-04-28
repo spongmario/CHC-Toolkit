@@ -1597,19 +1597,19 @@ async function loadPTGuides() {
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'pt'),
                 fileType: manifestItemFileType(item),
-                url: documentsAssetUrl(item.file)
+                url: documentsAssetUrl(item.file),
+                variantGroup: item.variantGroup || null,
+                variantLang: typeof item.variantLang === 'string' ? item.variantLang.toLowerCase() : null
             };
         });
         
         console.log('Loaded', ptGuides.length, 'PT guides from GitHub');
-        updateLanguageTabs('pt');
         const language = getActiveLanguage('pt');
         renderPTGuides('', language);
         return ptGuides;
     } catch (error) {
         console.error('Error loading PT guides:', error);
         ptGuides = [];
-        updateLanguageTabs('pt');
         const language = getActiveLanguage('pt');
         renderPTGuides('', language);
     }
@@ -1876,29 +1876,38 @@ function getLanguageDisplayName(language) {
     return displayNames[language] || language.charAt(0).toUpperCase() + language.slice(1);
 }
 
+function resolvePTGuideLang(g) {
+    if (!g) return 'english';
+    if (g.variantLang) return g.variantLang;
+    return parseLanguageFromFileName(g.name);
+}
+
+function getPTGuideIndexForVariant(groupId, lang) {
+    return ptGuides.findIndex(
+        hd => hd.variantGroup === groupId && resolvePTGuideLang(hd) === lang
+    );
+}
+
+function viewPTGuideByVariantGroup(groupId, lang) {
+    const idx = getPTGuideIndexForVariant(groupId, lang);
+    if (idx !== -1) viewPTGuide(idx);
+}
+
+function downloadPTGuideByVariantGroup(groupId, lang) {
+    const idx = getPTGuideIndexForVariant(groupId, lang);
+    if (idx !== -1) downloadPTGuide(idx);
+}
+
 function renderPTGuides(filter = '', language = null) {
     const container = document.getElementById('ptList');
     if (!container) return;
-    
-    // Check available languages to determine if we should filter
-    const availableLanguages = getAvailableLanguages('pt');
-    const hasMultipleLanguages = availableLanguages.length > 1;
-    
-    // Get active language from tab if not provided
-    if (language === null) {
-        language = getActiveLanguage('pt');
+
+    if (language === null || language === undefined) {
+        language = 'english';
     }
-    
+
     let filteredGuides = [...ptGuides];
-    
-    // Filter by language only if multiple languages are available
-    if (hasMultipleLanguages) {
-        filteredGuides = filteredGuides.filter(g => {
-            const guideLanguage = parseLanguageFromFileName(g.name);
-            return guideLanguage === language;
-        });
-    }
-    
+
     // Then apply search filter
     if (filter) {
         const searchLower = filter.toLowerCase();
@@ -1907,7 +1916,7 @@ function renderPTGuides(filter = '', language = null) {
             (g.displayName && g.displayName.toLowerCase().includes(searchLower))
         );
     }
-    
+
     if (filteredGuides.length === 0 && ptGuides.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
@@ -1918,51 +1927,108 @@ function renderPTGuides(filter = '', language = null) {
         `;
         return;
     }
-    
+
     if (filteredGuides.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Guides Found</h3>
-                <p>No ${getLanguageDisplayName(language)} guides match your search criteria.</p>
+                <p>No guides match your search criteria.</p>
             </div>
         `;
         return;
     }
-    
-    // Sort alphabetically by display name
+
     filteredGuides.sort((a, b) => {
         const nameA = (a.displayName || a.name).toLowerCase();
         const nameB = (b.displayName || b.name).toLowerCase();
         return nameA.localeCompare(nameB);
     });
-    
+
+    const langOrder = ['english', 'spanish', 'french', 'german', 'chinese', 'japanese', 'korean', 'portuguese', 'italian', 'russian'];
+    const seenVariantGroups = new Set();
+    const rowModels = [];
+    for (const g of filteredGuides) {
+        if (!g.variantGroup) {
+            rowModels.push({ type: 'single', guide: g });
+            continue;
+        }
+        if (seenVariantGroups.has(g.variantGroup)) continue;
+        seenVariantGroups.add(g.variantGroup);
+        const members = filteredGuides.filter(x => x.variantGroup === g.variantGroup);
+        members.sort((a, b) => {
+            const la = resolvePTGuideLang(a);
+            const lb = resolvePTGuideLang(b);
+            const ia = langOrder.indexOf(la);
+            const ib = langOrder.indexOf(lb);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        rowModels.push({ type: 'variants', groupId: g.variantGroup, members });
+    }
+
+    if (rowModels.length === 0) {
+        container.innerHTML = `
+            <div class="empty-pathways">
+                <div class="empty-icon">🔍</div>
+                <h3>No Guides Found</h3>
+                <p>No guides match your search criteria.</p>
+            </div>
+        `;
+        return;
+    }
+
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${filteredGuides.map((guide) => {
-                const fileIcon = getFileIcon(guide.fileType);
-                const displayName = guide.displayName || guide.name;
-                const actualIndex = ptGuides.findIndex(g => g.id === guide.id);
-                const escapedBaseName = getBaseName(guide.name).replace(/'/g, "\\'");
-                
-                return `
-                    <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${language}')">
+            ${rowModels.map((model) => {
+                if (model.type === 'single') {
+                    const guide = model.guide;
+                    const fileIcon = getFileIcon(guide.fileType);
+                    const displayName = guide.displayName || guide.name;
+                    const actualIndex = ptGuides.findIndex(g => g.id === guide.id);
+                    const escapedBaseName = getBaseName(guide.name).replace(/'/g, "\\'");
+                    const guideLang = resolvePTGuideLang(guide);
+                    const escapedGuideLang = escapeJsString(guideLang);
+                    return `
+                    <div class="pathway-list-item" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${escapedGuideLang}')">
                         <div class="pathway-list-icon">${fileIcon}</div>
                         <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
                             <div class="pathway-list-name">${escapeHtml(displayName)}</div>
                         </div>
                         <div class="pathway-list-actions" onclick="event.stopPropagation()">
-                            <button class="btn btn-primary btn-small" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${language}')">View</button>
+                            <button class="btn btn-primary btn-small" onclick="viewPTGuideByLanguage('${escapedBaseName}', '${escapedGuideLang}')">View</button>
                             <button class="btn btn-secondary btn-small" onclick="downloadPTGuide(${actualIndex})">Download</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+                }
+                const { groupId, members } = model;
+                const primary = members.find(m => resolvePTGuideLang(m) === 'english') || members[0];
+                const displayName = primary.displayName || primary.name;
+                const fileIcon = getFileIcon(primary.fileType);
+                const langs = members.map(resolvePTGuideLang);
+                let selectedLang = language;
+                if (!langs.includes(language)) {
+                    selectedLang = langs[0] || 'english';
+                }
+                const safeGroupId = String(groupId).replace(/[^a-zA-Z0-9-]/g, '') || 'pt-group';
+                const gidJs = escapeJsString(groupId);
+                const optionsHtml = langs
+                    .map((l) => `<option value="${l}" ${l === selectedLang ? 'selected' : ''}>${escapeHtml(getLanguageDisplayName(l))}</option>`)
+                    .join('');
+                return `
+                    <div class="pathway-list-item pathway-list-item--variants">
+                        <div class="pathway-list-icon">${fileIcon}</div>
+                        <div class="pathway-list-info" style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                        </div>
+                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                            <select id="pt-lang-${safeGroupId}" class="handout-lang-select" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" aria-label="Document language">${optionsHtml}</select>
+                            <button type="button" class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewPTGuideByVariantGroup('${gidJs}', document.getElementById('pt-lang-${safeGroupId}').value)">View</button>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="event.stopPropagation(); downloadPTGuideByVariantGroup('${gidJs}', document.getElementById('pt-lang-${safeGroupId}').value)">Download</button>
+                        </div>
+                    </div>`;
             }).join('')}
         </div>
     `;
-    
-    // Update tab visibility based on available languages
-    updateLanguageTabs('pt');
 }
 
 
@@ -2324,6 +2390,8 @@ function updateLanguageTabs(section) {
 // Make PT functions available globally
 window.viewPTGuide = viewPTGuide;
 window.viewPTGuideByLanguage = viewPTGuideByLanguage;
+window.viewPTGuideByVariantGroup = viewPTGuideByVariantGroup;
+window.downloadPTGuideByVariantGroup = downloadPTGuideByVariantGroup;
 window.downloadPTGuide = downloadPTGuide;
 window.renamePTGuide = renamePTGuide;
 window.deletePTGuide = deletePTGuide;
@@ -2445,6 +2513,9 @@ async function loadHandouts() {
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'handout'),
                 fileType,
+                patientEducation: item.patientEducation === true,
+                variantGroup: item.variantGroup || null,
+                variantLang: typeof item.variantLang === 'string' ? item.variantLang.toLowerCase() : null,
                 url
             };
         });
@@ -2481,6 +2552,29 @@ async function saveHandout(handout) {
     }
 }
 
+/** Language for a patient resource handout — explicit variantLang or parsed from filename. */
+function resolveHandoutLang(h) {
+    if (!h) return 'english';
+    if (h.variantLang) return h.variantLang;
+    return parseLanguageFromFileName(h.name);
+}
+
+function getHandoutIndexForVariant(groupId, lang) {
+    return handouts.findIndex(
+        hd => hd.variantGroup === groupId && resolveHandoutLang(hd) === lang
+    );
+}
+
+function viewHandoutByVariantGroup(groupId, lang) {
+    const idx = getHandoutIndexForVariant(groupId, lang);
+    if (idx !== -1) viewHandout(idx);
+}
+
+function downloadHandoutByVariantGroup(groupId, lang) {
+    const idx = getHandoutIndexForVariant(groupId, lang);
+    if (idx !== -1) downloadHandout(idx);
+}
+
 function renderHandouts(filter = '', language = null) {
     const container = document.getElementById('handoutsList');
     if (!container) return;
@@ -2493,40 +2587,24 @@ function renderHandouts(filter = '', language = null) {
     // Get active resource type (handouts vs patient-education)
     const resourceType = getActiveResourceType('handouts');
     
-    // Check available languages to determine if we should filter
-    const availableLanguages = getAvailableLanguages('handouts');
-    const hasMultipleLanguages = availableLanguages.length > 1;
-    
-    // Get active language from tab if not provided
-    if (language === null) {
-        language = getActiveLanguage('handouts');
+    // No global English/Spanish tabs for Patient Resources — default English for merged variant rows
+    if (language === null || language === undefined) {
+        language = 'english';
     }
     
     let filteredHandouts = [...handouts];
     
-    // Filter by resource type
-    // Patient Education should only show hidradenitis education
-    // Handouts should exclude hidradenitis education
-    if (resourceType === 'patient-education') {
-        // Only show hidradenitis education
-        filteredHandouts = filteredHandouts.filter(h => {
-            const name = (h.displayName || h.name).toLowerCase();
-            return name.includes('hidradenitis') || name.includes('hid supp');
-        });
-    } else {
-        // Exclude hidradenitis education from handouts
-        filteredHandouts = filteredHandouts.filter(h => {
-            const name = (h.displayName || h.name).toLowerCase();
-            return !name.includes('hidradenitis') && !name.includes('hid supp');
-        });
-    }
+    const isPatientEducationItem = (h) => {
+        if (h.patientEducation === true) return true;
+        const name = (h.displayName || h.name).toLowerCase();
+        return name.includes('hidradenitis') || name.includes('hid supp');
+    };
     
-    // Filter by language only if multiple languages are available
-    if (hasMultipleLanguages) {
-        filteredHandouts = filteredHandouts.filter(h => {
-            const handoutLanguage = parseLanguageFromFileName(h.name);
-            return handoutLanguage === language;
-        });
+    // Filter by resource type
+    if (resourceType === 'patient-education') {
+        filteredHandouts = filteredHandouts.filter(isPatientEducationItem);
+    } else {
+        filteredHandouts = filteredHandouts.filter(h => !isPatientEducationItem(h));
     }
     
     // Apply search filter if provided
@@ -2545,7 +2623,28 @@ function renderHandouts(filter = '', language = null) {
         return nameA.localeCompare(nameB);
     });
     
-    if (filteredHandouts.length === 0 && handouts.length === 0) {
+    const langOrder = ['english', 'spanish', 'french', 'german', 'chinese', 'japanese', 'korean', 'portuguese', 'italian', 'russian'];
+    const seenVariantGroups = new Set();
+    const rowModels = [];
+    for (const h of filteredHandouts) {
+        if (!h.variantGroup) {
+            rowModels.push({ type: 'single', handout: h });
+            continue;
+        }
+        if (seenVariantGroups.has(h.variantGroup)) continue;
+        seenVariantGroups.add(h.variantGroup);
+        const members = filteredHandouts.filter(x => x.variantGroup === h.variantGroup);
+        members.sort((a, b) => {
+            const la = resolveHandoutLang(a);
+            const lb = resolveHandoutLang(b);
+            const ia = langOrder.indexOf(la);
+            const ib = langOrder.indexOf(lb);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        rowModels.push({ type: 'variants', groupId: h.variantGroup, members });
+    }
+    
+    if (rowModels.length === 0 && handouts.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">📢</div>
@@ -2556,31 +2655,30 @@ function renderHandouts(filter = '', language = null) {
         return;
     }
     
-    if (filteredHandouts.length === 0) {
-        const resourceTypeName = resourceType === 'patient-education' ? 'patient education' : 'handouts';
+    if (rowModels.length === 0) {
         container.innerHTML = `
             <div class="empty-pathways">
                 <div class="empty-icon">🔍</div>
                 <h3>No Resources Found</h3>
-                <p>No ${getLanguageDisplayName(language)} ${resourceTypeName} match your search criteria.</p>
+                <p>No resources in this category match your search.</p>
             </div>
         `;
         return;
     }
     
-    // Create list HTML
     container.innerHTML = `
         <div class="pathway-list-container">
-            ${filteredHandouts.map((handout) => {
-                const fileIcon = getFileIcon(handout.fileType);
-                // Find the actual index in the original handouts array
-                const actualIndex = handouts.findIndex(h => h.id === handout.id);
-                const displayName = handout.displayName || handout.name;
-                const downloadBtn =
-                    handout.fileType === 'link'
-                        ? ''
-                        : `<button class="btn btn-secondary btn-small" onclick="downloadHandout(${actualIndex})">Download</button>`;
-                return `
+            ${rowModels.map((model) => {
+                if (model.type === 'single') {
+                    const handout = model.handout;
+                    const fileIcon = getFileIcon(handout.fileType);
+                    const actualIndex = handouts.findIndex(h => h.id === handout.id);
+                    const displayName = handout.displayName || handout.name;
+                    const downloadBtn =
+                        handout.fileType === 'link'
+                            ? ''
+                            : `<button class="btn btn-secondary btn-small" onclick="downloadHandout(${actualIndex})">Download</button>`;
+                    return `
                     <div class="pathway-list-item" onclick="viewHandout(${actualIndex})">
                         <div class="pathway-list-icon">${fileIcon}</div>
                         <div class="pathway-list-info">
@@ -2591,13 +2689,41 @@ function renderHandouts(filter = '', language = null) {
                             ${downloadBtn}
                         </div>
                     </div>
+                    `;
+                }
+                const { groupId, members } = model;
+                const primary = members.find(m => resolveHandoutLang(m) === 'english') || members[0];
+                const displayName = primary.displayName || primary.name;
+                const fileIcon = getFileIcon(primary.fileType);
+                const langs = members.map(resolveHandoutLang);
+                let selectedLang = language;
+                if (!langs.includes(language)) {
+                    selectedLang = langs[0] || 'english';
+                }
+                const safeGroupId = String(groupId).replace(/[^a-zA-Z0-9-]/g, '') || 'group';
+                const gidJs = escapeJsString(groupId);
+                const optionsHtml = langs
+                    .map(
+                        (l) =>
+                            `<option value="${l}" ${l === selectedLang ? 'selected' : ''}>${escapeHtml(getLanguageDisplayName(l))}</option>`
+                    )
+                    .join('');
+                return `
+                    <div class="pathway-list-item pathway-list-item--variants">
+                        <div class="pathway-list-icon">${fileIcon}</div>
+                        <div class="pathway-list-info">
+                            <div class="pathway-list-name">${escapeHtml(displayName)}</div>
+                        </div>
+                        <div class="pathway-list-actions" onclick="event.stopPropagation()">
+                            <select id="handout-lang-${safeGroupId}" class="handout-lang-select" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" aria-label="Document language">${optionsHtml}</select>
+                            <button type="button" class="btn btn-primary btn-small" onclick="event.stopPropagation(); viewHandoutByVariantGroup('${gidJs}', document.getElementById('handout-lang-${safeGroupId}').value)">View</button>
+                            <button type="button" class="btn btn-secondary btn-small" onclick="event.stopPropagation(); downloadHandoutByVariantGroup('${gidJs}', document.getElementById('handout-lang-${safeGroupId}').value)">Download</button>
+                        </div>
+                    </div>
                 `;
             }).join('')}
         </div>
     `;
-    
-    // Update tab visibility based on available languages
-    updateLanguageTabs('handouts');
 }
 
 function viewHandout(index) {
@@ -2769,6 +2895,8 @@ async function initializeHandouts() {
 
 // Make handouts functions available globally
 window.viewHandout = viewHandout;
+window.viewHandoutByVariantGroup = viewHandoutByVariantGroup;
+window.downloadHandoutByVariantGroup = downloadHandoutByVariantGroup;
 window.downloadHandout = downloadHandout;
 window.renameHandout = renameHandout;
 window.deleteHandout = deleteHandout;

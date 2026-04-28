@@ -650,6 +650,26 @@ body {
     white-space: nowrap;
 }
 
+.pathway-list-item--variants {
+    cursor: default;
+}
+
+.pathway-list-actions .handout-lang-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9em;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 7.25rem;
+}
+
+.pathway-list-actions .handout-lang-select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
 .language-buttons {
     display: flex;
     gap: var(--spacing-sm);

@@ -7,7 +7,8 @@
   {
     "name": "Hidradenitis Suppurativa Education",
     "file": "handouts/HidSupp.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "patientEducation": true
   },
   {
     "name": "NeilMed",
@@ -40,6 +41,28 @@
     "file": "external/providence-intervention-center-everett",
     "type": "link",
     "url": "https://www.providence.org/locations/wa/intervention-center-for-assault-and-abuse-everett"
+  },
+  {
+    "name": "Viral Illness Children",
+    "file": "handouts/viral-illness-children.pdf",
+    "type": "pdf",
+    "patientEducation": true,
+    "variantGroup": "viral-illness-children",
+    "variantLang": "english"
+  },
+  {
+    "name": "Viral Illness Children (Spanish)",
+    "file": "handouts/viral-illness-children-spanish.pdf",
+    "type": "pdf",
+    "patientEducation": true,
+    "variantGroup": "viral-illness-children",
+    "variantLang": "spanish"
+  },
+  {
+    "name": "Gastroenteritis",
+    "file": "handouts/gastroenteritis.pdf",
+    "type": "pdf",
+    "patientEducation": true
   }
 ]
 

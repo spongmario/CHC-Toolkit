@@ -2,12 +2,16 @@
   {
     "name": "Lower Back",
     "file": "pt-guides/lower-back.pdf",
-    "type": "pdf"
+    "type": "pdf",
+    "variantGroup": "lower-back",
+    "variantLang": "english"
   },
   {
     "name": "Lower Back Spanish",
-    "file": "pt-guides/Lower Back spanish.pdf",
-    "type": "pdf"
+    "file": "pt-guides/lower-back-spanish.pdf",
+    "type": "pdf",
+    "variantGroup": "lower-back",
+    "variantLang": "spanish"
   },
   {
     "name": "Upper Back",
