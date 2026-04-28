@@ -8,6 +8,14 @@ let shiftAssignments = {
     thursday3: false
 };
 
+// Raster files (png, jpg, …) must use writePopoutImageViewer() — one shared layout for all sections.
+// When adding a new image type, extend POPOUT_RASTER_FILE_TYPES and mirror in getFileIcon if needed.
+const POPOUT_RASTER_FILE_TYPES = Object.freeze(['png', 'jpg', 'jpeg', 'gif', 'webp']);
+
+function isPopoutRasterFileType(fileType) {
+    return POPOUT_RASTER_FILE_TYPES.includes(String(fileType || '').toLowerCase());
+}
+
 // Load data from localStorage
 function loadData() {
     const savedAssignments = localStorage.getItem('chcShiftAssignments');
@@ -681,6 +689,11 @@ if (window.location.hostname.includes('github.io') || window.location.hostname.i
     GITHUB_BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
 }
 
+/** Build fetch/open URL for a file under `/documents/` (encodes spaces in filenames). */
+function documentsAssetUrl(relativePathFromRepoDocuments) {
+    return encodeURI(`${GITHUB_BASE_URL}/documents/${relativePathFromRepoDocuments}`);
+}
+
 let pathways = [];
 
 function initDB() {
@@ -746,8 +759,8 @@ async function loadPathways() {
                 file: item.file,
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'pathway'),
-                fileType: item.type || getFileExtension(item.name),
-                url: `${GITHUB_BASE_URL}/documents/${item.file}`,
+                fileType: manifestItemFileType(item),
+                url: documentsAssetUrl(item.file),
                 relatedPathway: item.relatedPathway || null,
                 category: item.category || 'pathway' // Default to 'pathway' for backward compatibility
             };
@@ -758,8 +771,8 @@ async function loadPathways() {
                     file: item.nestedPathway.file,
                     name: item.nestedPathway.name,
                     displayName: getDisplayName(item.nestedPathway.file, item.nestedPathway.name, 'pathway'),
-                    fileType: item.nestedPathway.type || getFileExtension(item.nestedPathway.name),
-                    url: `${GITHUB_BASE_URL}/documents/${item.nestedPathway.file}`
+                    fileType: manifestItemFileType(item.nestedPathway),
+                    url: documentsAssetUrl(item.nestedPathway.file)
                 };
             }
             
@@ -1008,10 +1021,10 @@ function renderPathways(filter = '', category = null) {
 
 function getFileIcon(fileType) {
     if (fileType === 'pdf') return '📄';
+    if (isPopoutRasterFileType(fileType)) return '📄';
     if (fileType === 'link') return '🔗';
     if (fileType === 'doc' || fileType === 'docx') return '📝';
     if (fileType === 'txt') return '📃';
-    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(fileType)) return '🖼️';
     return '📎';
 }
 
@@ -1106,6 +1119,120 @@ function getFileExtension(filename) {
     return filename.split('.').pop().toLowerCase();
 }
 
+/** Resolve type from manifest: prefer explicit type, then extension on file path (display names often omit .ext). */
+function manifestItemFileType(item) {
+    if (!item) return '';
+    if (item.type) return item.type;
+    const fromFile = item.file ? getFileExtension(item.file) : '';
+    if (fromFile) return fromFile;
+    return getFileExtension(item.name || '');
+}
+
+/**
+ * Canonical popout for raster docs (POPOUT_RASTER_FILE_TYPES — png, jpeg, gif, webp).
+ * Provider Resources, Physical Therapy, Patient Resources, and Forms all route here via isPopoutRasterFileType().
+ * Do not duplicate this markup elsewhere; extend types in POPOUT_RASTER_FILE_TYPES only.
+ */
+function writePopoutImageViewer(newWindow, imageUrl, pageTitle) {
+    if (!newWindow) return;
+    const title = escapeHtml(pageTitle || '');
+    const safeSrc = escapeHtml(imageUrl || '');
+    newWindow.document.open();
+    newWindow.document.write(`
+            <html>
+                <head>
+                    <title>${title}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            margin: 0;
+                            min-height: 100vh;
+                            padding-top: 52px;
+                            box-sizing: border-box;
+                            overflow-x: hidden;
+                            overflow-y: auto;
+                            background: linear-gradient(180deg, #f8fafc 0%, #f0f9ff 40%, #e0f2fe 100%);
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        }
+                        .img-toolbar {
+                            position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+                            display: flex; align-items: center; justify-content: center; gap: 10px;
+                            padding: 12px 18px;
+                            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                            box-shadow: 0 2px 12px rgba(14, 165, 233, 0.35);
+                            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .img-toolbar button {
+                            padding: 8px 18px;
+                            background: rgba(255, 255, 255, 0.95);
+                            color: #0284c7;
+                            border: 1px solid rgba(255, 255, 255, 0.6);
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.9em;
+                            transition: background 0.2s ease, box-shadow 0.2s ease;
+                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+                        }
+                        .img-toolbar button:hover {
+                            background: #ffffff;
+                            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+                        }
+                        .img-wrap {
+                            width: 75vw;
+                            max-width: 75vw;
+                            margin: 0 auto;
+                            padding: 8px 0 10px;
+                            box-sizing: border-box;
+                        }
+                        .img-wrap img {
+                            display: block;
+                            width: 100%;
+                            max-width: 100%;
+                            height: auto;
+                            margin: 0 auto;
+                            border-radius: 8px;
+                            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+                            border: 1px solid rgba(14, 165, 233, 0.15);
+                            background: #fff;
+                        }
+                        @media print {
+                            body {
+                                padding-top: 0;
+                                background: white;
+                            }
+                            .img-toolbar { display: none !important; }
+                            .img-wrap {
+                                width: auto;
+                                max-width: none;
+                                padding: 0;
+                                margin: 0;
+                            }
+                            .img-wrap img {
+                                width: auto;
+                                max-width: 100%;
+                                max-height: none;
+                                box-shadow: none;
+                                border: none;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="img-toolbar">
+                        <button type="button" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="img-wrap">
+                        <img src="${safeSrc}" alt="${title}" />
+                    </div>
+                </body>
+            </html>
+        `);
+    newWindow.document.close();
+}
+
 function viewPathway(index) {
     const pathway = pathways[index];
     if (!pathway) return;
@@ -1122,27 +1249,12 @@ function viewPathway(index) {
     
     // Open document from GitHub URL
     const newWindow = window.open();
-    const imageTypes = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
-    if (imageTypes.includes(pathway.fileType)) {
-        newWindow.document.write(`
-            <html>
-                <head>
-                    <title>${escapeHtml(pathway.displayName || pathway.name)}</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        body { margin: 0; background: #1a1a1e; min-height: 100vh; }
-                        .img-wrap { padding: 0; box-sizing: border-box; }
-                        .img-wrap img { display: block; width: 100%; max-width: 100%; height: auto; }
-                    </style>
-                </head>
-                <body>
-                    <div class="img-wrap">
-                        <img src="${pathway.url}" alt="${escapeHtml(pathway.displayName || pathway.name)}" />
-                    </div>
-                </body>
-            </html>
-        `);
-    } else if (pathway.fileType === 'pdf') {
+    if (!newWindow) return;
+    const fileTypeLc = String(pathway.fileType || '').toLowerCase();
+    if (isPopoutRasterFileType(fileTypeLc)) {
+        writePopoutImageViewer(newWindow, pathway.url, pathway.displayName || pathway.name);
+        return;
+    } else if (fileTypeLc === 'pdf') {
         // For PDFs, embed directly with optional related pathway banner
         let relatedBanner = '';
         if (relatedPathwayUrl && relatedPathwayIndex !== -1) {
@@ -1484,8 +1596,8 @@ async function loadPTGuides() {
                 file: item.file,
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'pt'),
-                fileType: item.type || getFileExtension(item.name),
-                url: `${GITHUB_BASE_URL}/documents/${item.file}`
+                fileType: manifestItemFileType(item),
+                url: documentsAssetUrl(item.file)
             };
         });
         
@@ -1928,9 +2040,13 @@ function viewPTGuideByLanguage(baseName, language) {
 }
 
 function openPTGuideWindow(guide) {
-    // Open document from GitHub URL
     const newWindow = window.open();
-    if (guide.fileType === 'pdf') {
+    if (!newWindow) return;
+    const fileTypeLower = String(guide.fileType || '').toLowerCase();
+    if (isPopoutRasterFileType(fileTypeLower)) {
+        writePopoutImageViewer(newWindow, guide.url, guide.displayName || guide.name);
+        return;
+    } else if (fileTypeLower === 'pdf') {
         newWindow.document.write(`
             <html>
                 <head>
@@ -2319,10 +2435,10 @@ async function loadHandouts() {
         const manifest = await response.json();
         await loadCustomDisplayNames(); // Load custom names from GitHub
         handouts = manifest.map((item, index) => {
-            const fileType = item.type || getFileExtension(item.name);
+            const fileType = manifestItemFileType(item);
             const url = item.url
                 ? item.url
-                : `${GITHUB_BASE_URL}/documents/${item.file}`;
+                : documentsAssetUrl(item.file);
             return {
                 id: index,
                 file: item.file,
@@ -2495,7 +2611,13 @@ function viewHandout(index) {
 
     // Open document from GitHub URL
     const newWindow = window.open();
-    if (handout.fileType === 'pdf') {
+    if (!newWindow) return;
+    const ftl = String(handout.fileType || '').toLowerCase();
+    if (isPopoutRasterFileType(ftl)) {
+        writePopoutImageViewer(newWindow, handout.url, handout.displayName || handout.name);
+        return;
+    }
+    if (ftl === 'pdf') {
         // For PDFs, embed directly
         newWindow.document.write(`
             <html>
@@ -2672,8 +2794,8 @@ async function loadForms() {
                 file: item.file,
                 name: item.name,
                 displayName: getDisplayName(item.file, item.name, 'form'),
-                fileType: item.type || getFileExtension(item.name),
-                url: `${GITHUB_BASE_URL}/documents/${item.file}`
+                fileType: manifestItemFileType(item),
+                url: documentsAssetUrl(item.file)
             };
         });
         
@@ -2807,14 +2929,17 @@ function viewFormByLanguage(baseName, language) {
 }
 
 function openFormWindow(form) {
-    // Open document from GitHub URL
     const newWindow = window.open();
-    if (form.fileType === 'html') {
+    if (!newWindow) return;
+    const ftl = String(form.fileType || '').toLowerCase();
+    if (ftl === 'html') {
         // For HTML forms (like excuse letter), open directly
         // Provider data will be loaded from localStorage in the new window
         // (works if same origin) or from window.opener if available
         newWindow.location.href = form.url;
-    } else if (form.fileType === 'pdf') {
+    } else if (isPopoutRasterFileType(ftl)) {
+        writePopoutImageViewer(newWindow, form.url, form.displayName || form.name);
+    } else if (ftl === 'pdf') {
         // For PDFs, embed directly
         newWindow.document.write(`
             <html>

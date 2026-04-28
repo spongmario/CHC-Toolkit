@@ -1,7 +1,7 @@
 [
   {
-    "name": "Lower Back.pdf",
-    "file": "pt-guides/Lower Back.pdf",
+    "name": "Lower Back",
+    "file": "pt-guides/lower-back.pdf",
     "type": "pdf"
   },
   {
@@ -11,22 +11,37 @@
   },
   {
     "name": "Upper Back",
-    "file": "pt-guides/Upper Back v2.pdf",
+    "file": "pt-guides/upper-back.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Shoulder Pain",
+    "file": "pt-guides/shoulder-pain.pdf",
     "type": "pdf"
   },
   {
     "name": "Plantar Fasciitis",
-    "file": "pt-guides/Plantar Fasciitis.pdf",
+    "file": "pt-guides/plantar-fasciitis.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Ankle Sprain",
+    "file": "pt-guides/ankle-sprain.pdf",
+    "type": "pdf"
+  },
+  {
+    "name": "Knee Sprain",
+    "file": "pt-guides/knee-sprain.pdf",
     "type": "pdf"
   },
   {
     "name": "Cervical Radiculopathy",
-    "file": "pt-guides/Cervical Radiculopathy Exercises.pdf",
+    "file": "pt-guides/cervical-radiculopathy.pdf",
     "type": "pdf"
   },
   {
     "name": "TMJ",
-    "file": "pt-guides/TMJ Exercises.pdf",
+    "file": "pt-guides/tmj.pdf",
     "type": "pdf"
   }
 ]
