@@ -394,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('currentTime').value = `${hours}:${minutes}`;
     
     loadData();
+    initVaccineSchedules();
     initVaccineChecklists();
     
     const shiftTypeSelect = document.getElementById('shiftType');
@@ -2401,6 +2402,64 @@ window.switchResourceTypeTab = switchResourceTypeTab;
 
 // ==================== Vaccine Schedule Tab Switching ====================
 
+const VACCINE_SCHEDULE_SOURCES = {
+    cdc: {
+        adult: {
+            url: 'documents/pathways/cdc-adult-vaccine-schedule.pdf',
+            title: 'CDC Adult Vaccine Schedule'
+        },
+        pediatric: {
+            url: 'documents/pathways/cdc-pediatric-vaccine-schedule.pdf',
+            title: 'CDC Pediatric Vaccine Schedule'
+        }
+    },
+    wa: {
+        adult: {
+            url: 'https://doh.wa.gov/sites/default/files/2026-04/348-1156AdultImmunizationSchedule.pdf',
+            title: 'WA State Adult Vaccine Schedule'
+        },
+        pediatric: {
+            url: 'https://doh.wa.gov/sites/default/files/2026-04/348-1090ChildLaminatedImmunizationSchedules.pdf',
+            title: 'WA State Pediatric Vaccine Schedule'
+        }
+    }
+};
+
+let activeVaccineScheduleTypes = {
+    cdc: 'adult',
+    wa: 'adult'
+};
+
+function updateVaccineSchedulePreview(source) {
+    const scheduleType = activeVaccineScheduleTypes[source];
+    const schedule = VACCINE_SCHEDULE_SOURCES[source]?.[scheduleType];
+    if (!schedule) return;
+
+    const iframe = document.getElementById(`${source}-schedule-iframe`);
+    const openLink = document.getElementById(`${source}-schedule-open-link`);
+    const fallbackLink = document.getElementById(`${source}-schedule-fallback-link`);
+    const select = document.getElementById(`${source}-schedule-type-select`);
+
+    if (iframe) {
+        iframe.src = schedule.url;
+        iframe.title = schedule.title;
+    }
+    if (openLink) openLink.href = schedule.url;
+    if (fallbackLink) fallbackLink.href = schedule.url;
+    if (select) select.value = scheduleType;
+}
+
+function switchVaccineScheduleType(source, scheduleType) {
+    if (!VACCINE_SCHEDULE_SOURCES[source]?.[scheduleType]) return;
+    activeVaccineScheduleTypes[source] = scheduleType;
+    updateVaccineSchedulePreview(source);
+}
+
+function initVaccineSchedules() {
+    updateVaccineSchedulePreview('cdc');
+    updateVaccineSchedulePreview('wa');
+}
+
 const VACCINE_CHECKLISTS = {
     p4065: {
         baseUrl: 'https://www.immunize.org/wp-content/uploads/catg.d/p4065'
@@ -2495,30 +2554,31 @@ function switchVaccineScheduleTab(scheduleType) {
     });
     
     // Show/hide sections
-    const adultCdcSection = document.getElementById('adult-cdc-vaccine-schedule-section');
-    const pediatricCdcSection = document.getElementById('pediatric-cdc-vaccine-schedule-section');
-    const pediatricAapSection = document.getElementById('pediatric-aap-vaccine-schedule-section');
+    const cdcSection = document.getElementById('cdc-vaccine-schedule-section');
+    const aapSection = document.getElementById('aap-vaccine-schedule-section');
+    const waSection = document.getElementById('wa-vaccine-schedule-section');
     const screeningChecklistsSection = document.getElementById('screening-checklists-vaccine-schedule-section');
     
     // Hide all sections first
-    if (adultCdcSection) adultCdcSection.style.display = 'none';
-    if (pediatricCdcSection) pediatricCdcSection.style.display = 'none';
-    if (pediatricAapSection) pediatricAapSection.style.display = 'none';
+    if (cdcSection) cdcSection.style.display = 'none';
+    if (aapSection) aapSection.style.display = 'none';
+    if (waSection) waSection.style.display = 'none';
     if (screeningChecklistsSection) screeningChecklistsSection.style.display = 'none';
     
     // Show the selected section
-    if (scheduleType === 'adult-cdc') {
-        if (adultCdcSection) adultCdcSection.style.display = 'block';
-    } else if (scheduleType === 'pediatric-cdc') {
-        if (pediatricCdcSection) pediatricCdcSection.style.display = 'block';
-    } else if (scheduleType === 'pediatric-aap') {
-        if (pediatricAapSection) pediatricAapSection.style.display = 'block';
+    if (scheduleType === 'cdc') {
+        if (cdcSection) cdcSection.style.display = 'block';
+    } else if (scheduleType === 'aap') {
+        if (aapSection) aapSection.style.display = 'block';
+    } else if (scheduleType === 'wa') {
+        if (waSection) waSection.style.display = 'block';
     } else if (scheduleType === 'screening-checklists') {
         if (screeningChecklistsSection) screeningChecklistsSection.style.display = 'block';
     }
 }
 
 window.switchVaccineScheduleTab = switchVaccineScheduleTab;
+window.switchVaccineScheduleType = switchVaccineScheduleType;
 window.switchVaccineChecklistForm = switchVaccineChecklistForm;
 window.selectVaccineChecklistLanguage = selectVaccineChecklistLanguage;
 

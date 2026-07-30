@@ -537,6 +537,26 @@ body {
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
+.schedule-type-control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-lg);
+    width: 260px;
+    max-width: 100%;
+}
+
+.schedule-type-control .checklist-control-select {
+    min-height: 44px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 1em;
+    transition: var(--transition);
+}
+
+.schedule-type-control .checklist-control-select:hover {
+    border-color: var(--primary-light);
+}
+
 .search-input {
     width: 100%;
     padding: var(--spacing-md) var(--spacing-lg);

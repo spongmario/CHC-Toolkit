@@ -517,41 +517,51 @@
             <div id="vaccine-schedule-page" class="page">
                 <div class="page-header">
                     <h2>Vaccines</h2>
-                    <p class="page-subtitle">Recommended immunization schedules from the CDC and AAP</p>
+                    <p class="page-subtitle">Recommended immunization schedules from the CDC, AAP, and Washington State Department of Health</p>
                 </div>
                 <div class="pathways-content">
                     <!-- Schedule Type Tabs -->
                     <div class="language-tabs" data-section="vaccine-schedule" style="margin-bottom: 30px; border-bottom: 3px solid #e9ecef;">
-                        <button class="language-tab active" data-language="adult-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('adult-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Adult CDC</button>
-                        <button class="language-tab" data-language="pediatric-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric CDC</button>
-                        <button class="language-tab" data-language="pediatric-aap" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-aap')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric AAP</button>
+                        <button class="language-tab active" data-language="cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">CDC</button>
+                        <button class="language-tab" data-language="aap" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('aap')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">AAP</button>
+                        <button class="language-tab" data-language="wa" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('wa')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">WA State</button>
                         <button class="language-tab" data-language="screening-checklists" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('screening-checklists')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Screening Checklists</button>
                     </div>
                     
-                    <!-- Adult CDC Vaccine Schedule Section -->
-                    <div id="adult-cdc-vaccine-schedule-section" class="vaccine-schedule-section">
+                    <!-- CDC Vaccine Schedule Section -->
+                    <div id="cdc-vaccine-schedule-section" class="vaccine-schedule-section">
                         <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                             <div style="display: flex; align-items: flex-start; gap: 14px;">
                                 <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
                                 <div style="flex: 1;">
                                     <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
-                                        This vaccine schedule is provided by the <strong>Centers for Disease Control and Prevention (CDC)</strong>. 
-                                        <a href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                        This vaccine schedule is provided by the <strong>Centers for Disease Control and Prevention (CDC)</strong>.
+                                        <a id="cdc-schedule-open-link" href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
                                             Click here to view or download the PDF directly
                                         </a>.
                                     </p>
                                 </div>
                             </div>
                         </div>
+
+                        <div class="schedule-type-control">
+                            <label for="cdc-schedule-type-select" class="checklist-control-label">Schedule</label>
+                            <select id="cdc-schedule-type-select" class="checklist-control-select" onchange="switchVaccineScheduleType('cdc', this.value)">
+                                <option value="adult">Adult</option>
+                                <option value="pediatric">Pediatric</option>
+                            </select>
+                        </div>
+
                         <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
-                            <iframe 
-                                src="documents/pathways/cdc-adult-vaccine-schedule.pdf" 
+                            <iframe
+                                id="cdc-schedule-iframe"
+                                src="documents/pathways/cdc-adult-vaccine-schedule.pdf"
                                 style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
-                                title="CDC Adult Vaccine Schedule"
+                                title="CDC Vaccine Schedule"
                                 type="application/pdf">
                                 <p style="padding: 20px; text-align: center; color: #6c757d;">
-                                    Your browser does not support PDFs. 
-                                    <a href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                    Your browser does not support PDFs.
+                                    <a id="cdc-schedule-fallback-link" href="documents/pathways/cdc-adult-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
                                         Click here to download the PDF
                                     </a>.
                                 </p>
@@ -559,15 +569,15 @@
                         </div>
                     </div>
                     
-                    <!-- Pediatric CDC Vaccine Schedule Section -->
-                    <div id="pediatric-cdc-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
+                    <!-- AAP Vaccine Schedule Section -->
+                    <div id="aap-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
                         <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                             <div style="display: flex; align-items: flex-start; gap: 14px;">
                                 <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
                                 <div style="flex: 1;">
                                     <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
-                                        This vaccine schedule is provided by the <strong>Centers for Disease Control and Prevention (CDC)</strong>. 
-                                        <a href="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                        This 2026 vaccine schedule is provided by the <strong>American Academy of Pediatrics (AAP)</strong>.
+                                        <a href="https://downloads.aap.org/AAP/PDF/AAP-Immunization-Schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
                                             Click here to view or download the PDF directly
                                         </a>.
                                     </p>
@@ -575,45 +585,55 @@
                             </div>
                         </div>
                         <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
-                            <iframe 
-                                src="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" 
-                                style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
-                                title="CDC Pediatric Vaccine Schedule"
-                                type="application/pdf">
-                                <p style="padding: 20px; text-align: center; color: #6c757d;">
-                                    Your browser does not support PDFs. 
-                                    <a href="documents/pathways/cdc-pediatric-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
-                                        Click here to download the PDF
-                                    </a>.
-                                </p>
-                            </iframe>
-                        </div>
-                    </div>
-                    
-                    <!-- Pediatric AAP Vaccine Schedule Section -->
-                    <div id="pediatric-aap-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
-                        <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
-                            <div style="display: flex; align-items: flex-start; gap: 14px;">
-                                <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
-                                <div style="flex: 1;">
-                                    <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
-                                        This vaccine schedule is provided by the <strong>American Academy of Pediatrics (AAP)</strong>. 
-                                        <a href="documents/pathways/aap-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
-                                            Click here to view or download the PDF directly
-                                        </a>.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
-                            <iframe 
-                                src="documents/pathways/aap-vaccine-schedule.pdf" 
+                            <iframe
+                                src="https://downloads.aap.org/AAP/PDF/AAP-Immunization-Schedule.pdf"
                                 style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
                                 title="AAP Pediatric Vaccine Schedule"
                                 type="application/pdf">
                                 <p style="padding: 20px; text-align: center; color: #6c757d;">
-                                    Your browser does not support PDFs. 
-                                    <a href="documents/pathways/aap-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                    Your browser does not support PDFs.
+                                    <a href="https://downloads.aap.org/AAP/PDF/AAP-Immunization-Schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                        Click here to download the PDF
+                                    </a>.
+                                </p>
+                            </iframe>
+                        </div>
+                    </div>
+
+                    <!-- WA State Vaccine Schedule Section -->
+                    <div id="wa-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
+                        <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+                            <div style="display: flex; align-items: flex-start; gap: 14px;">
+                                <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
+                                <div style="flex: 1;">
+                                    <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
+                                        This vaccine schedule is provided by the <strong>Washington State Department of Health</strong>.
+                                        <a id="wa-schedule-open-link" href="https://doh.wa.gov/sites/default/files/2026-04/348-1156AdultImmunizationSchedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600;">
+                                            Click here to view or download the PDF directly
+                                        </a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="schedule-type-control">
+                            <label for="wa-schedule-type-select" class="checklist-control-label">Schedule</label>
+                            <select id="wa-schedule-type-select" class="checklist-control-select" onchange="switchVaccineScheduleType('wa', this.value)">
+                                <option value="adult">Adult</option>
+                                <option value="pediatric">Pediatric</option>
+                            </select>
+                        </div>
+
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
+                            <iframe
+                                id="wa-schedule-iframe"
+                                src="https://doh.wa.gov/sites/default/files/2026-04/348-1156AdultImmunizationSchedule.pdf"
+                                style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
+                                title="WA State Vaccine Schedule"
+                                type="application/pdf">
+                                <p style="padding: 20px; text-align: center; color: #6c757d;">
+                                    Your browser does not support PDFs.
+                                    <a id="wa-schedule-fallback-link" href="https://doh.wa.gov/sites/default/files/2026-04/348-1156AdultImmunizationSchedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
                                         Click here to download the PDF
                                     </a>.
                                 </p>
