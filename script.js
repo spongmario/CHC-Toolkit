@@ -394,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('currentTime').value = `${hours}:${minutes}`;
     
     loadData();
+    initVaccineChecklists();
     
     const shiftTypeSelect = document.getElementById('shiftType');
     const setCurrentTimeBtn = document.getElementById('setCurrentTimeBtn');
@@ -2399,6 +2400,89 @@ window.switchLanguageTab = switchLanguageTab;
 window.switchResourceTypeTab = switchResourceTypeTab;
 
 // ==================== Vaccine Schedule Tab Switching ====================
+
+const VACCINE_CHECKLISTS = {
+    p4065: {
+        baseUrl: 'https://www.immunize.org/wp-content/uploads/catg.d/p4065'
+    },
+    p4060: {
+        baseUrl: 'https://www.immunize.org/wp-content/uploads/catg.d/p4060'
+    }
+};
+
+const VACCINE_CHECKLIST_LANGUAGES = [
+    { name: 'English', suffix: '' },
+    { name: 'Arabic', suffix: '-ara' },
+    { name: 'Bosnian', suffix: '-bos' },
+    { name: 'Chinese (Simplified)', suffix: '-zho_cn' },
+    { name: 'Dari', suffix: '-prs' },
+    { name: 'French', suffix: '-fra' },
+    { name: 'Haitian Creole', suffix: '-hat' },
+    { name: 'Kinyarwanda', suffix: '-kin' },
+    { name: 'Korean', suffix: '-kor' },
+    { name: 'Nepali', suffix: '-nep' },
+    { name: 'Pashto', suffix: '-pus' },
+    { name: 'Punjabi', suffix: '-pan' },
+    { name: 'Russian', suffix: '-rus' },
+    { name: 'Somali', suffix: '-som' },
+    { name: 'Spanish', suffix: '-spa' },
+    { name: 'Swahili', suffix: '-swh' },
+    { name: 'Ukrainian', suffix: '-ukr' },
+    { name: 'Vietnamese', suffix: '-vie' }
+];
+
+let activeVaccineChecklistForm = 'p4065';
+let activeVaccineChecklistLanguage = '';
+
+function getVaccineChecklistPdfUrl(formId, languageSuffix) {
+    const checklist = VACCINE_CHECKLISTS[formId];
+    if (!checklist) return '';
+    return `${checklist.baseUrl}${languageSuffix}.pdf`;
+}
+
+function renderVaccineChecklistLanguageSelect() {
+    const select = document.getElementById('vaccine-checklist-language-select');
+    if (!select) return;
+
+    select.innerHTML = VACCINE_CHECKLIST_LANGUAGES.map(lang =>
+        `<option value="${lang.suffix}">${lang.name}</option>`
+    ).join('');
+    select.value = activeVaccineChecklistLanguage;
+}
+
+function updateVaccineChecklistPreview() {
+    const pdfUrl = getVaccineChecklistPdfUrl(activeVaccineChecklistForm, activeVaccineChecklistLanguage);
+    const iframe = document.getElementById('vaccine-checklist-iframe');
+    const openLink = document.getElementById('vaccine-checklist-open-link');
+    const fallbackLink = document.getElementById('vaccine-checklist-fallback-link');
+    const languageSelect = document.getElementById('vaccine-checklist-language-select');
+    const formSelect = document.getElementById('vaccine-checklist-form-select');
+
+    if (iframe) iframe.src = pdfUrl;
+    if (openLink) openLink.href = pdfUrl;
+    if (fallbackLink) fallbackLink.href = pdfUrl;
+    if (languageSelect) languageSelect.value = activeVaccineChecklistLanguage;
+    if (formSelect) formSelect.value = activeVaccineChecklistForm;
+}
+
+function selectVaccineChecklistLanguage(languageSuffix) {
+    activeVaccineChecklistLanguage = languageSuffix;
+    updateVaccineChecklistPreview();
+}
+
+function switchVaccineChecklistForm(formId) {
+    if (!VACCINE_CHECKLISTS[formId]) return;
+
+    activeVaccineChecklistForm = formId;
+    activeVaccineChecklistLanguage = '';
+    updateVaccineChecklistPreview();
+}
+
+function initVaccineChecklists() {
+    renderVaccineChecklistLanguageSelect();
+    updateVaccineChecklistPreview();
+}
+
 function switchVaccineScheduleTab(scheduleType) {
     // Update active tab
     const tabs = document.querySelectorAll(`.language-tab[data-section="vaccine-schedule"]`);
@@ -2414,11 +2498,13 @@ function switchVaccineScheduleTab(scheduleType) {
     const adultCdcSection = document.getElementById('adult-cdc-vaccine-schedule-section');
     const pediatricCdcSection = document.getElementById('pediatric-cdc-vaccine-schedule-section');
     const pediatricAapSection = document.getElementById('pediatric-aap-vaccine-schedule-section');
+    const screeningChecklistsSection = document.getElementById('screening-checklists-vaccine-schedule-section');
     
     // Hide all sections first
     if (adultCdcSection) adultCdcSection.style.display = 'none';
     if (pediatricCdcSection) pediatricCdcSection.style.display = 'none';
     if (pediatricAapSection) pediatricAapSection.style.display = 'none';
+    if (screeningChecklistsSection) screeningChecklistsSection.style.display = 'none';
     
     // Show the selected section
     if (scheduleType === 'adult-cdc') {
@@ -2427,10 +2513,14 @@ function switchVaccineScheduleTab(scheduleType) {
         if (pediatricCdcSection) pediatricCdcSection.style.display = 'block';
     } else if (scheduleType === 'pediatric-aap') {
         if (pediatricAapSection) pediatricAapSection.style.display = 'block';
+    } else if (scheduleType === 'screening-checklists') {
+        if (screeningChecklistsSection) screeningChecklistsSection.style.display = 'block';
     }
 }
 
 window.switchVaccineScheduleTab = switchVaccineScheduleTab;
+window.switchVaccineChecklistForm = switchVaccineChecklistForm;
+window.selectVaccineChecklistLanguage = selectVaccineChecklistLanguage;
 
 // ==================== Patient Resources (Handouts) System ====================
 

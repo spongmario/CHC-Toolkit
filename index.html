@@ -525,6 +525,7 @@
                         <button class="language-tab active" data-language="adult-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('adult-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Adult CDC</button>
                         <button class="language-tab" data-language="pediatric-cdc" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-cdc')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric CDC</button>
                         <button class="language-tab" data-language="pediatric-aap" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('pediatric-aap')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Pediatric AAP</button>
+                        <button class="language-tab" data-language="screening-checklists" data-section="vaccine-schedule" onclick="switchVaccineScheduleTab('screening-checklists')" style="padding: 16px 32px; font-size: 1.15em; font-weight: 600; border-bottom-width: 4px;">Screening Checklists</button>
                     </div>
                     
                     <!-- Adult CDC Vaccine Schedule Section -->
@@ -613,6 +614,56 @@
                                 <p style="padding: 20px; text-align: center; color: #6c757d;">
                                     Your browser does not support PDFs. 
                                     <a href="documents/pathways/aap-vaccine-schedule.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
+                                        Click here to download the PDF
+                                    </a>.
+                                </p>
+                            </iframe>
+                        </div>
+                    </div>
+
+                    <!-- Screening Checklists Section -->
+                    <div id="screening-checklists-vaccine-schedule-section" class="vaccine-schedule-section" style="display: none;">
+                        <div class="source-message" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%); border-left: 4px solid #667eea; padding: 18px 24px; margin-bottom: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+                            <div style="display: flex; align-items: flex-start; gap: 14px;">
+                                <span style="font-size: 1.3em; margin-top: 2px;">ℹ️</span>
+                                <div style="flex: 1;">
+                                    <p style="color: #2c3e50; margin: 0 0 10px 0; line-height: 1.6; font-size: 0.95em;">
+                                        These screening checklists are provided by <strong><a href="https://www.immunize.org/clinical/topic/screening-checklists/" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">Immunize.org</a></strong> for front desk staff to print and have patients complete before vaccination.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="checklist-controls">
+                            <div class="checklist-control">
+                                <label for="vaccine-checklist-form-select" class="checklist-control-label">Form</label>
+                                <select id="vaccine-checklist-form-select" class="checklist-control-select" onchange="switchVaccineChecklistForm(this.value)">
+                                    <option value="p4065">Vaccine Checklist Adults</option>
+                                    <option value="p4060">Vaccine Checklist Children</option>
+                                </select>
+                            </div>
+                            <div class="checklist-control">
+                                <label for="vaccine-checklist-language-select" class="checklist-control-label">Language</label>
+                                <select id="vaccine-checklist-language-select" class="checklist-control-select" onchange="selectVaccineChecklistLanguage(this.value)"></select>
+                            </div>
+                        </div>
+
+                        <div style="margin: 16px 0 24px 0;">
+                            <a id="vaccine-checklist-open-link" href="https://www.immunize.org/wp-content/uploads/catg.d/p4065.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline; font-weight: 600; font-size: 0.95em;">
+                                Open PDF in new tab for printing
+                            </a>
+                        </div>
+
+                        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; border: 1px solid #e9ecef;">
+                            <iframe
+                                id="vaccine-checklist-iframe"
+                                src="https://www.immunize.org/wp-content/uploads/catg.d/p4065.pdf"
+                                style="width: 100%; height: 90vh; min-height: 800px; border: none; display: block;"
+                                title="Vaccine Screening Checklist"
+                                type="application/pdf">
+                                <p style="padding: 20px; text-align: center; color: #6c757d;">
+                                    Your browser does not support PDFs.
+                                    <a id="vaccine-checklist-fallback-link" href="https://www.immunize.org/wp-content/uploads/catg.d/p4065.pdf" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">
                                         Click here to download the PDF
                                     </a>.
                                 </p>
