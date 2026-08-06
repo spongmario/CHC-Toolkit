@@ -10,7 +10,7 @@ A web-based calculator for estimating remaining patient capacity at the end of t
 - **Smart Calculations**: 
   - Calculates remaining hours for each provider based on current time
   - Applies the last-hour rule (1.8 patients in the final hour)
-  - Includes patients currently in the lobby
+  - Includes patients waiting to be seen (lobby + roomed but unassigned)
 - **Data Persistence**: Provider data and shift assignments are saved locally in your browser
 
 ## Usage
@@ -19,7 +19,7 @@ A web-based calculator for estimating remaining patient capacity at the end of t
 2. **Assign Shifts**: Check the boxes to assign providers to their respective shifts (Opening, Mid, or Close)
 3. **Select Date**: Choose the date you're calculating for (Thursday will automatically adjust all shifts to 9-7pm)
 4. **Enter Current Info**: 
-   - Enter the number of patients currently in the lobby
+   - Enter the number of patients waiting to be seen (lobby + roomed but not yet assigned to a provider)
    - Set the current time (defaults to actual current time)
 5. **Calculate**: Click "Calculate Remaining Patients" to see the estimated total
 
@@ -37,4 +37,4 @@ A web-based calculator for estimating remaining patient capacity at the end of t
 
 - Providers see their full patients-per-hour rate for complete hours remaining
 - In the last hour of their shift, providers only see 1.8 patients (regardless of their rate)
-- Patients currently in the lobby are included in the total estimate
+- Patients waiting to be seen are included in the total estimate (lobby + roomed but unassigned to a provider)
