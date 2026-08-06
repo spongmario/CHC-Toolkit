@@ -5,8 +5,120 @@ let shiftAssignments = {
     close: false,
     thursday1: false,
     thursday2: false,
-    thursday3: false
+    thursday3: false,
+    saturday: false
 };
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function getDayOfWeek() {
+    return new Date().getDay();
+}
+
+function getDayConfig(dayOfWeek = getDayOfWeek()) {
+    if (dayOfWeek === 0) {
+        return {
+            dayName: DAY_NAMES[0],
+            isClosed: true,
+            scheduleLabel: 'Closed',
+            latestShiftEnd: 0,
+            shifts: []
+        };
+    }
+
+    if (dayOfWeek === 4) {
+        return {
+            dayName: DAY_NAMES[4],
+            isClosed: false,
+            isThursday: true,
+            scheduleLabel: 'Thursday — 3 shifts (9 AM – 7 PM)',
+            latestShiftEnd: 19,
+            shifts: [
+                { key: 'thursday1', label: 'Shift 1 (9-7)', checkboxId: 'thursdayShift1Checkbox', name: 'Shift 1', start: 9, end: 19 },
+                { key: 'thursday2', label: 'Shift 2 (9-7)', checkboxId: 'thursdayShift2Checkbox', name: 'Shift 2', start: 9, end: 19 },
+                { key: 'thursday3', label: 'Shift 3 (9-7)', checkboxId: 'thursdayShift3Checkbox', name: 'Shift 3', start: 9, end: 19 }
+            ]
+        };
+    }
+
+    if (dayOfWeek === 6) {
+        return {
+            dayName: DAY_NAMES[6],
+            isClosed: false,
+            scheduleLabel: 'Saturday — 1 provider (9 AM – 7 PM)',
+            latestShiftEnd: 19,
+            shifts: [
+                { key: 'saturday', label: 'Provider Shift (9-7)', checkboxId: 'saturdayShiftCheckbox', name: 'Saturday', start: 9, end: 19 }
+            ]
+        };
+    }
+
+    return {
+        dayName: DAY_NAMES[dayOfWeek],
+        isClosed: false,
+        isThursday: false,
+        scheduleLabel: `${DAY_NAMES[dayOfWeek]} — Opening (8-6), Mid (9-7), Close (10-8)`,
+        latestShiftEnd: 20,
+        shifts: [
+            { key: 'opening', label: 'Opening Shift (8-6)', checkboxId: 'openingShiftCheckbox', name: 'Opening', start: 8, end: 18 },
+            { key: 'mid', label: 'Mid Shift (9-7)', checkboxId: 'midShiftCheckbox', name: 'Mid', start: 9, end: 19 },
+            { key: 'close', label: 'Close Shift (10-8)', checkboxId: 'closeShiftCheckbox', name: 'Close', start: 10, end: 20 }
+        ]
+    };
+}
+
+function updateDayScheduleDisplay() {
+    const label = document.getElementById('dayScheduleLabel');
+    if (!label) return;
+
+    const config = getDayConfig();
+    label.textContent = config.scheduleLabel;
+    label.classList.toggle('day-closed', config.isClosed);
+}
+
+function getLunchPeriods(providerCount, dayOfWeek = getDayOfWeek()) {
+    if (dayOfWeek === 0 || providerCount === 0) {
+        return [];
+    }
+
+    if (providerCount >= 3) {
+        return [
+            { start: 12, end: 13 },
+            { start: 13, end: 14 },
+            { start: 14, end: 15 }
+        ];
+    }
+
+    if (providerCount === 2) {
+        return [
+            { start: 12, end: 13 },
+            { start: 14, end: 15 }
+        ];
+    }
+
+    return [{ start: 12, end: 13 }];
+}
+
+function calculateLunchDeduction(currentHour, currentMinute, providerCount, latestShiftEnd, dayOfWeek = getDayOfWeek()) {
+    const lunchPeriods = getLunchPeriods(providerCount, dayOfWeek);
+    const currentTime = currentHour + currentMinute / 60;
+    let deduction = 0;
+
+    for (const period of lunchPeriods) {
+        if (currentTime >= period.end || currentTime >= latestShiftEnd) {
+            continue;
+        }
+
+        const effectiveStart = Math.max(currentTime, period.start);
+        const effectiveEnd = Math.min(period.end, latestShiftEnd);
+
+        if (effectiveStart < effectiveEnd) {
+            deduction += (effectiveEnd - effectiveStart) * 2;
+        }
+    }
+
+    return deduction;
+}
 
 // Raster files (png, jpg, …) must use writePopoutImageViewer() — one shared layout for all sections.
 // When adding a new image type, extend POPOUT_RASTER_FILE_TYPES and mirror in getFileIcon if needed.
@@ -30,6 +142,7 @@ function loadData() {
             shiftAssignments.thursday1 = saved.thursday1 && saved.thursday1.length > 0;
             shiftAssignments.thursday2 = saved.thursday2 && saved.thursday2.length > 0;
             shiftAssignments.thursday3 = saved.thursday3 && saved.thursday3.length > 0;
+            shiftAssignments.saturday = saved.saturday && saved.saturday.length > 0;
             } else {
             // New format - boolean flags
             shiftAssignments = { ...shiftAssignments, ...saved };
@@ -44,69 +157,37 @@ function saveData() {
     localStorage.setItem('chcShiftAssignments', JSON.stringify(shiftAssignments));
 }
 
-// Update shift assignments UI
+// Update shift assignments UI based on the current day of the week
 function updateShiftAssignments() {
-    const shiftType = document.getElementById('shiftType').value;
-    const isThursday = shiftType === 'thursday';
-    
+    const config = getDayConfig();
+    updateDayScheduleDisplay();
+
     const shiftsContainer = document.getElementById('shiftsContainer');
     shiftsContainer.innerHTML = '';
-    
-    if (isThursday) {
-        // Thursday: show 3 shifts all 9-7
-        const shifts = [
-            { key: 'thursday1', label: 'Shift 1 (9-7)', checkboxId: 'thursdayShift1Checkbox' },
-            { key: 'thursday2', label: 'Shift 2 (9-7)', checkboxId: 'thursdayShift2Checkbox' },
-            { key: 'thursday3', label: 'Shift 3 (9-7)', checkboxId: 'thursdayShift3Checkbox' }
-        ];
-        
-        shifts.forEach(shift => {
-            const checkboxGroup = document.createElement('div');
-            checkboxGroup.className = 'shift-checkbox-group';
-            checkboxGroup.innerHTML = `
-                <label class="shift-checkbox-label">
-                    <input type="checkbox" id="${shift.checkboxId}" class="shift-checkbox" ${shiftAssignments[shift.key] ? 'checked' : ''}>
-                    <span class="shift-checkbox-text">${shift.label}</span>
-                </label>
-            `;
-            shiftsContainer.appendChild(checkboxGroup);
-            
-            // Add event listener
-            const checkbox = document.getElementById(shift.checkboxId);
-            checkbox.addEventListener('change', function() {
-                shiftAssignments[shift.key] = this.checked;
-                saveData();
-                calculateRemainingPatients();
-            });
-        });
-    } else {
-        // Normal: show 3 different shifts
-        const shifts = [
-            { key: 'opening', label: 'Opening Shift (8-6)', checkboxId: 'openingShiftCheckbox' },
-            { key: 'mid', label: 'Mid Shift (9-7)', checkboxId: 'midShiftCheckbox' },
-            { key: 'close', label: 'Close Shift (10-8)', checkboxId: 'closeShiftCheckbox' }
-        ];
-        
-        shifts.forEach(shift => {
-            const checkboxGroup = document.createElement('div');
-            checkboxGroup.className = 'shift-checkbox-group';
-            checkboxGroup.innerHTML = `
-                <label class="shift-checkbox-label">
-                    <input type="checkbox" id="${shift.checkboxId}" class="shift-checkbox" ${shiftAssignments[shift.key] ? 'checked' : ''}>
-                    <span class="shift-checkbox-text">${shift.label}</span>
-                </label>
-            `;
-            shiftsContainer.appendChild(checkboxGroup);
-            
-            // Add event listener
-            const checkbox = document.getElementById(shift.checkboxId);
-            checkbox.addEventListener('change', function() {
-                shiftAssignments[shift.key] = this.checked;
-    saveData();
-    calculateRemainingPatients();
-            });
-        });
+
+    if (config.isClosed) {
+        shiftsContainer.innerHTML = '<div class="shift-closed-message">The clinic is closed on Sundays.</div>';
+        return;
     }
+
+    config.shifts.forEach(shift => {
+        const checkboxGroup = document.createElement('div');
+        checkboxGroup.className = 'shift-checkbox-group';
+        checkboxGroup.innerHTML = `
+            <label class="shift-checkbox-label">
+                <input type="checkbox" id="${shift.checkboxId}" class="shift-checkbox" ${shiftAssignments[shift.key] ? 'checked' : ''}>
+                <span class="shift-checkbox-text">${shift.label}</span>
+            </label>
+        `;
+        shiftsContainer.appendChild(checkboxGroup);
+
+        const checkbox = document.getElementById(shift.checkboxId);
+        checkbox.addEventListener('change', function() {
+            shiftAssignments[shift.key] = this.checked;
+            saveData();
+            calculateRemainingPatients();
+        });
+    });
 }
 
 // Set current time to now
@@ -124,20 +205,34 @@ function setCurrentTime() {
     }
 }
 
-// Get shift times based on shift type
-function getShiftTimes(isThursday) {
-    if (isThursday) {
-        return {
-            thursday1: { start: 9, end: 19 }, // 9-7pm
-            thursday2: { start: 9, end: 19 }, // 9-7pm
-            thursday3: { start: 9, end: 19 }  // 9-7pm
-        };
-    } else {
-        return {
-            opening: { start: 8, end: 18 }, // 8-6pm
-            mid: { start: 9, end: 19 },     // 9-7pm
-            close: { start: 10, end: 20 }   // 10-8pm
-        };
+function formatHourForDisplay(hour) {
+    const displayHour = hour === 0 || hour === 24 ? 12 : (hour > 12 ? hour - 12 : hour);
+    const ampm = hour >= 12 && hour < 24 ? 'PM' : 'AM';
+    return `${displayHour}:00 ${ampm}`;
+}
+
+function showClosedState(displayTime, currentHour, currentMinute, message) {
+    const resultBox = document.getElementById('result');
+    if (resultBox) {
+        resultBox.classList.add('closed');
+    }
+    const resultValue = document.getElementById('resultValue');
+    if (resultValue) {
+        resultValue.textContent = 'CLOSED';
+    }
+    const rickeyMessage = document.getElementById('rickeyMessage');
+    if (rickeyMessage) {
+        rickeyMessage.style.display = 'none';
+    }
+    const resultBreakdown = document.getElementById('resultBreakdown');
+    if (resultBreakdown) {
+        resultBreakdown.innerHTML = `
+            <div class="breakdown-header" style="color: #ffeb3b; font-weight: bold;">⚠️ Clinic Closed</div>
+            <div class="breakdown-item" style="margin-top: 10px;">
+                Current time: ${displayTime} (${currentHour}:${String(currentMinute).padStart(2, '0')})<br>
+                ${message}
+            </div>
+        `;
     }
 }
 
@@ -180,143 +275,93 @@ function calculateShiftRemainingPatients(remainingHours) {
     return patientsFromFullHours + patientsFromLastHour;
 }
 
-// Get the latest shift end time based on shift type
-function getLatestShiftEndTime(isThursday) {
-    if (isThursday) {
-        return 19; // 7pm for Thursday shifts
-    } else {
-        return 20; // 8pm for normal shifts
-    }
-}
-
 // Calculate total remaining patients
 function calculateRemainingPatients() {
-    const shiftType = document.getElementById('shiftType').value;
     const currentTime = document.getElementById('currentTime').value;
     const patientsInLobby = parseInt(document.getElementById('patientsInLobby').value) || 0;
-    
-    // If no time is set yet, don't calculate (will update automatically once time is set)
+    const dayConfig = getDayConfig();
+
     if (!currentTime) {
         return;
     }
-    
+
     const [hours, minutes] = currentTime.split(':').map(Number);
     const currentHour = hours;
     const currentMinute = minutes;
-    
-    // Debug: Log the time values to help troubleshoot
-    console.log('Time input value:', currentTime);
-    console.log('Parsed hours:', currentHour, 'minutes:', currentMinute);
-    
-    const isThursday = shiftType === 'thursday';
-    const latestShiftEnd = getLatestShiftEndTime(isThursday);
     const currentTimeDecimal = currentHour + currentMinute / 60;
-    
-    console.log('Current time decimal:', currentTimeDecimal, 'Latest shift end:', latestShiftEnd);
-    console.log('Is after closing?', currentTimeDecimal >= latestShiftEnd);
-    
-    // Format time for display
+
     const displayHour = currentHour === 0 ? 12 : (currentHour > 12 ? currentHour - 12 : currentHour);
     const ampm = currentHour >= 12 ? 'PM' : 'AM';
     const displayTime = `${displayHour}:${String(currentMinute).padStart(2, '0')} ${ampm}`;
-    
-    // Check if current time is after the clinic closes
-    if (currentTimeDecimal >= latestShiftEnd) {
-        const closingTime = latestShiftEnd === 19 ? '7:00 PM' : '8:00 PM';
-        const resultBox = document.getElementById('result');
-        if (resultBox) {
-            resultBox.classList.add('closed');
-        }
-        const resultValue = document.getElementById('resultValue');
-        if (resultValue) {
-            resultValue.textContent = 'CLOSED';
-        }
-        // Hide Rickey message when closed
-        const rickeyMessage = document.getElementById('rickeyMessage');
-        if (rickeyMessage) {
-            rickeyMessage.style.display = 'none';
-        }
-        const resultBreakdown = document.getElementById('resultBreakdown');
-        if (resultBreakdown) {
-            resultBreakdown.innerHTML = `
-                <div class="breakdown-header" style="color: #ffeb3b; font-weight: bold;">⚠️ Clinic Closed</div>
-                <div class="breakdown-item" style="margin-top: 10px;">
-                    Current time: ${displayTime} (${currentHour}:${String(currentMinute).padStart(2, '0')})<br>
-                    The clinic closed at ${closingTime}. No remaining patient capacity calculations are available after closing time.
-                </div>
-            `;
-        }
+
+    if (dayConfig.isClosed) {
+        showClosedState(
+            displayTime,
+            currentHour,
+            currentMinute,
+            'The clinic is closed on Sundays. No remaining patient capacity calculations are available.'
+        );
         return;
     }
-    
-    // Remove closed class if clinic is open
+
+    const latestShiftEnd = dayConfig.latestShiftEnd;
+
+    if (currentTimeDecimal >= latestShiftEnd) {
+        showClosedState(
+            displayTime,
+            currentHour,
+            currentMinute,
+            `The clinic closed at ${formatHourForDisplay(latestShiftEnd)}. No remaining patient capacity calculations are available after closing time.`
+        );
+        return;
+    }
+
     const resultBox = document.getElementById('result');
     resultBox.classList.remove('closed');
-    
-    const shiftTimes = getShiftTimes(isThursday);
-    
+
     let totalProviderCapacity = 0;
     const breakdown = [];
-    
-    // Calculate for each shift
-    let shifts;
-    if (isThursday) {
-        shifts = [
-            { name: 'Shift 1', key: 'thursday1', shiftTimes: shiftTimes.thursday1 },
-            { name: 'Shift 2', key: 'thursday2', shiftTimes: shiftTimes.thursday2 },
-            { name: 'Shift 3', key: 'thursday3', shiftTimes: shiftTimes.thursday3 }
-        ];
-    } else {
-        shifts = [
-            { name: 'Opening', key: 'opening', shiftTimes: shiftTimes.opening },
-            { name: 'Mid', key: 'mid', shiftTimes: shiftTimes.mid },
-            { name: 'Close', key: 'close', shiftTimes: shiftTimes.close }
-        ];
-    }
-    
-    // Check if any shifts are filled
-    let hasAnyShifts = false;
-    shifts.forEach(shift => {
-        if (shiftAssignments[shift.key]) {
-            hasAnyShifts = true;
-            
-            const remainingHours = calculateRemainingHours(
-                currentHour,
-                currentMinute,
-                shift.shiftTimes.start,
-                shift.shiftTimes.end
-            );
-            
-            const remainingPatients = calculateShiftRemainingPatients(remainingHours);
-            totalProviderCapacity += remainingPatients;
-            
-            if (remainingPatients > 0) {
-                breakdown.push({
-                    shift: shift.name,
-                    remainingHours: remainingHours.toFixed(2),
-                    remainingPatients: remainingPatients.toFixed(1)
-                });
-            }
+    const activeShifts = dayConfig.shifts.filter(shift => shiftAssignments[shift.key]);
+    const providerCount = activeShifts.length;
+
+    activeShifts.forEach(shift => {
+        const remainingHours = calculateRemainingHours(
+            currentHour,
+            currentMinute,
+            shift.start,
+            shift.end
+        );
+
+        const remainingPatients = calculateShiftRemainingPatients(remainingHours);
+        totalProviderCapacity += remainingPatients;
+
+        if (remainingPatients > 0) {
+            breakdown.push({
+                shift: shift.name,
+                remainingHours: remainingHours.toFixed(2),
+                remainingPatients: remainingPatients.toFixed(1)
+            });
         }
     });
-    
-    // Round down total provider capacity to nearest whole number
+
+    const lunchDeduction = calculateLunchDeduction(
+        currentHour,
+        currentMinute,
+        providerCount,
+        latestShiftEnd
+    );
+    totalProviderCapacity = Math.max(0, totalProviderCapacity - lunchDeduction);
+
     const roundedProviderCapacity = Math.floor(totalProviderCapacity);
-    
-    // Display results
     const resultValue = document.getElementById('resultValue');
     const breakdownDiv = document.getElementById('resultBreakdown');
-    
-    // Check if no shifts are filled
-    if (!hasAnyShifts) {
-        // If no shifts filled, show negative of lobby patients (can't accept more)
+
+    if (providerCount === 0) {
         const remainingCapacity = 0 - patientsInLobby;
         resultValue.textContent = remainingCapacity;
         resultBox.classList.add('no-providers');
-        // Remove any color coding classes to keep the brown no-providers color
         resultBox.classList.remove('capacity-red', 'capacity-yellow', 'capacity-green', 'capacity-negative');
-        
-        // Show/hide Rickey message
+
         const rickeyMessage = document.getElementById('rickeyMessage');
         if (rickeyMessage) {
             if (remainingCapacity < 0) {
@@ -326,7 +371,7 @@ function calculateRemainingPatients() {
                 rickeyMessage.style.display = 'none';
             }
         }
-        
+
         breakdownDiv.innerHTML = `
             <div class="breakdown-header" style="color: #fff8dc; font-weight: bold;">⚠️ No Shifts Filled</div>
             <div class="breakdown-item" style="margin-top: 10px;">
@@ -335,19 +380,15 @@ function calculateRemainingPatients() {
         `;
         return;
     }
-    
-    // Remove no-providers class if shifts are filled
+
     resultBox.classList.remove('no-providers');
-    
-    // Calculate remaining capacity: rounded down total provider capacity minus patients in lobby
+
     const remainingCapacity = roundedProviderCapacity - patientsInLobby;
     resultValue.textContent = remainingCapacity;
-    
-    // Apply color coding based on remaining capacity
-    resultValue.className = 'result-value'; // Reset classes
+
+    resultValue.className = 'result-value';
     resultBox.classList.remove('capacity-red', 'capacity-yellow', 'capacity-green', 'capacity-negative');
-    
-    // Show/hide Rickey message
+
     const rickeyMessage = document.getElementById('rickeyMessage');
     if (rickeyMessage) {
         if (remainingCapacity < 0) {
@@ -357,7 +398,7 @@ function calculateRemainingPatients() {
             rickeyMessage.style.display = 'none';
         }
     }
-    
+
     if (remainingCapacity < 0) {
         resultBox.classList.add('capacity-negative');
     } else if (remainingCapacity <= 1) {
@@ -367,7 +408,11 @@ function calculateRemainingPatients() {
     } else {
         resultBox.classList.add('capacity-green');
     }
-    
+
+    const lunchNote = lunchDeduction > 0
+        ? `<div class="breakdown-item" style="font-size: 0.9em; color: #ffeb3b;">Lunch breaks: -${Math.floor(lunchDeduction)} patients (${providerCount} provider${providerCount === 1 ? '' : 's'} on shift)</div>`
+        : '';
+
     if (breakdown.length > 0) {
         breakdownDiv.innerHTML = `
             <div class="breakdown-header">Breakdown:</div>
@@ -376,11 +421,13 @@ function calculateRemainingPatients() {
                     ${item.shift}: ${Math.floor(parseFloat(item.remainingPatients))} patients (${item.remainingHours} hrs remaining)
                 </div>
             `).join('')}
+            ${lunchNote}
         `;
     } else {
         breakdownDiv.innerHTML = `
             <div class="breakdown-header">Breakdown:</div>
             <div class="breakdown-item" style="margin-top: 10px; color: #ffeb3b;">All filled shifts have completed.</div>
+            ${lunchNote}
         `;
     }
 }
@@ -397,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initVaccineSchedules();
     initVaccineChecklists();
     
-    const shiftTypeSelect = document.getElementById('shiftType');
     const setCurrentTimeBtn = document.getElementById('setCurrentTimeBtn');
     
     // Set current time button
@@ -433,14 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 500);
     
-    // Update shift assignments when shift type changes
-    if (shiftTypeSelect) {
-        shiftTypeSelect.addEventListener('change', () => {
-            updateShiftAssignments();
-            calculateRemainingPatients();
-        });
-    }
-    
+    // Recalculate when the calendar day changes (e.g. app left open overnight)
+    setInterval(() => {
+        updateShiftAssignments();
+        calculateRemainingPatients();
+    }, 60000);
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         // Ctrl/Cmd + T: Set current time

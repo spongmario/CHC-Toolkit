@@ -1071,6 +1071,29 @@ details[open] summary::before {
 }
 
 /* Shift Assignment */
+.day-schedule-display {
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+#dayScheduleLabel {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#dayScheduleLabel.day-closed {
+    color: #ef4444;
+}
+
+.shift-closed-message {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: var(--spacing-md) 0;
+}
+
 .shift-type-selector {
     margin-bottom: var(--spacing-xl);
 }
